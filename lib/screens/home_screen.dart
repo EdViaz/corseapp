@@ -1,82 +1,53 @@
 import 'package:flutter/material.dart';
-import 'classifica_screen.dart';
+import 'news_screen.dart';
+import 'standings_screen.dart';
+import 'races_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('F1 Stats App'),
-        backgroundColor: Colors.red,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildMenuButton(
-              context,
-              title: "Classifica Piloti",
-              icon: Icons.emoji_events,
-              screen: ClassificaScreen(),
-            ),
-            _buildMenuButton(
-              context,
-              title: "Calendario Gare",
-              icon: Icons.calendar_today,
-              screen: PlaceholderScreen(title: "Calendario Gare"),
-            ),
-            _buildMenuButton(
-              context,
-              title: "Confronta Piloti",
-              icon: Icons.compare_arrows,
-              screen: PlaceholderScreen(title: "Confronta Piloti"),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMenuButton(BuildContext context,
-      {required String title, required IconData icon, required Widget screen}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.red,
-          padding: EdgeInsets.symmetric(vertical: 16.0),
-        ),
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => screen),
-          );
-        },
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: Colors.white),
-            SizedBox(width: 10),
-            Text(title, style: TextStyle(fontSize: 18, color: Colors.white)),
-          ],
-        ),
-      ),
-    );
-  }
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
-// Placeholder per schermate ancora da sviluppare
-class PlaceholderScreen extends StatelessWidget {
-  final String title;
-  PlaceholderScreen({required this.title});
+class _HomeScreenState extends State<HomeScreen> {
+  int _selectedIndex = 0;
   
+  final List<Widget> _screens = [
+    const NewsScreen(),
+    const StandingsScreen(),
+    const RacesScreen(),
+  ];
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Center(child: Text("sigma", style: TextStyle(fontSize: 18))),
+      body: _screens[_selectedIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.article),
+            label: 'News',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.leaderboard),
+            label: 'Standings',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_today),
+            label: 'Races',
+          ),
+        ],
+        currentIndex: _selectedIndex,
+        selectedItemColor: Colors.red,
+        onTap: _onItemTapped,
+      ),
     );
   }
 }

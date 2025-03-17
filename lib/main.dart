@@ -2,24 +2,24 @@ import 'package:flutter/material.dart';
 import 'screens/home_screen.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'CorseApp',
+      title: 'F1 App',
       theme: ThemeData(
+        // Using red as the primary color to match F1 branding
         primarySwatch: Colors.red,
-        scaffoldBackgroundColor: Colors.grey[900],
-        textTheme: TextTheme(
-          bodyLarge: TextStyle(color: Colors.white),
-          bodyMedium: TextStyle(color: Colors.white70),
-        ),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.red),
       ),
-      home: HomeScreen(),
+      home: const HomeScreen(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
