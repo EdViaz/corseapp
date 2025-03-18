@@ -30,7 +30,7 @@ class _ClassificaScreenState extends State<ClassificaScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Classifica Piloti")),
+      appBar: AppBar(title: Image.asset("images/f1logo.png")),
       body: classifica.isEmpty
           ? Center(child: CircularProgressIndicator())
           : ListView.builder(

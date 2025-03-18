@@ -6,6 +6,7 @@ class News {
   final String content;
   final String imageUrl;
   final DateTime publishDate;
+  final String additionalImages;
 
   News({
     required this.id,
@@ -13,15 +14,21 @@ class News {
     required this.content,
     required this.imageUrl,
     required this.publishDate,
+    required this.additionalImages,
   });
 
   factory News.fromJson(Map<String, dynamic> json) {
     return News(
-      id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      id:
+          json['id'] is int
+              ? json['id']
+              : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
       title: json['title'] ?? '',
       content: json['content'] ?? '',
       imageUrl: json['image_url'] ?? '',
-      publishDate: DateTime.tryParse(json['publish_date'] ?? '') ?? DateTime.now(),
+      publishDate:
+          DateTime.tryParse(json['publish_date'] ?? '') ?? DateTime.now(),
+      additionalImages: json['additional_images'] ?? '',
     );
   }
 }
@@ -45,12 +52,21 @@ class Driver {
 
   factory Driver.fromJson(Map<String, dynamic> json) {
     return Driver(
-      id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      id:
+          json['id'] is int
+              ? json['id']
+              : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
       name: json['name'] ?? '',
       team: json['team'] ?? '',
-      points: json['points'] is int ? json['points'] : int.tryParse(json['points']?.toString() ?? '0') ?? 0,
+      points:
+          json['points'] is int
+              ? json['points']
+              : int.tryParse(json['points']?.toString() ?? '0') ?? 0,
       imageUrl: json['image_url'] ?? '',
-      position: json['position'] is int ? json['position'] : int.tryParse(json['position']?.toString() ?? '0') ?? 0,
+      position:
+          json['position'] is int
+              ? json['position']
+              : int.tryParse(json['position']?.toString() ?? '0') ?? 0,
     );
   }
 }
@@ -72,11 +88,20 @@ class Constructor {
 
   factory Constructor.fromJson(Map<String, dynamic> json) {
     return Constructor(
-      id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      id:
+          json['id'] is int
+              ? json['id']
+              : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
       name: json['name'] ?? '',
-      points: json['points'] is int ? json['points'] : int.tryParse(json['points']?.toString() ?? '0') ?? 0,
+      points:
+          json['points'] is int
+              ? json['points']
+              : int.tryParse(json['points']?.toString() ?? '0') ?? 0,
       logoUrl: json['logo_url'] ?? '',
-      position: json['position'] is int ? json['position'] : int.tryParse(json['position']?.toString() ?? '0') ?? 0,
+      position:
+          json['position'] is int
+              ? json['position']
+              : int.tryParse(json['position']?.toString() ?? '0') ?? 0,
     );
   }
 }
@@ -102,7 +127,10 @@ class Race {
 
   factory Race.fromJson(Map<String, dynamic> json) {
     return Race(
-      id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      id:
+          json['id'] is int
+              ? json['id']
+              : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
       name: json['name'] ?? '',
       circuit: json['circuit'] ?? '',
       date: DateTime.tryParse(json['date'] ?? '') ?? DateTime.now(),

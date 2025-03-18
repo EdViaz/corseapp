@@ -31,7 +31,7 @@ class _RacesScreenState extends State<RacesScreen> with SingleTickerProviderStat
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('F1 Race Calendar'),
+       title: Image.asset("images/f1logo.png"),
         backgroundColor: Colors.red,
         bottom: TabBar(
           controller: _tabController,
