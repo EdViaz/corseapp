@@ -18,7 +18,7 @@ class _ClassificaScreenState extends State<ClassificaScreen> {
 
   Future<void> fetchClassifica() async {
     try {
-      final data = await apiService.getClassifica();
+      final data = await apiService.getDriverStandings();
       setState(() {
         classifica = data;
       });
