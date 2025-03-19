@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../models/pilota.dart';
 
 class ClassificaScreen extends StatefulWidget {
   @override
@@ -8,7 +9,7 @@ class ClassificaScreen extends StatefulWidget {
 
 class _ClassificaScreenState extends State<ClassificaScreen> {
   final ApiService apiService = ApiService();
-  List<dynamic> classifica = [];
+  List<Pilota> classifica = [];
 
   @override
   void initState() {
@@ -19,8 +20,13 @@ class _ClassificaScreenState extends State<ClassificaScreen> {
   Future<void> fetchClassifica() async {
     try {
       final data = await apiService.getDriverStandings();
+      final piloti = data.map((driver) => Pilota(
+            nome: driver.name.split(' ').first,
+            cognome: driver.name.split(' ').last,
+            punti: driver.points,
+          )).toList();
       setState(() {
-        classifica = data;
+        classifica = piloti;
       });
     } catch (e) {
       print("Errore: $e");
@@ -39,8 +45,8 @@ class _ClassificaScreenState extends State<ClassificaScreen> {
                 final pilota = classifica[index];
                 return ListTile(
                   leading: CircleAvatar(child: Text("${index + 1}")),
-                  title: Text("${pilota['nome']} ${pilota['cognome']}"),
-                  subtitle: Text("Punti: ${pilota['punti']}"),
+                  title: Text("${pilota.nome} ${pilota.cognome}"),
+                  subtitle: Text("Punti: ${pilota.punti}"),
                 );
               },
             ),
