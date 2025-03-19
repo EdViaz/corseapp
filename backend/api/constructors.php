@@ -7,8 +7,9 @@ header('Access-Control-Allow-Origin: *');
 include_once '../config/database.php';
 
 try {
-    // Create connection
-    $conn = new mysqli($host, $username, $password, $database);
+    // Create database instance and get connection
+    $database = new Database();
+    $conn = $database->getConnection();
 
     // Check connection
     if ($conn->connect_error) {

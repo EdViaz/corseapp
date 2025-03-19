@@ -59,7 +59,7 @@ class NewsDetailScreen extends StatelessWidget {
                     style: const TextStyle(fontSize: 16),
                   ),
                   // Se ci sono altre immagini, le mostriamo qui
-                  if (news.additionalImages != null && news.additionalImages!.isNotEmpty)
+                  if (news.additionalImages.isNotEmpty)
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -76,14 +76,14 @@ class NewsDetailScreen extends StatelessWidget {
                           height: 120,
                           child: ListView.builder(
                             scrollDirection: Axis.horizontal,
-                            itemCount: news.additionalImages!.length,
+                            itemCount: news.additionalImages.length,
                             itemBuilder: (context, index) {
                               return Padding(
                                 padding: const EdgeInsets.only(right: 8.0),
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(8.0),
                                   child: Image.network(
-                                    news.additionalImages![index],
+                                    news.additionalImages[index],
                                     width: 160,
                                     height: 120,
                                     fit: BoxFit.cover,

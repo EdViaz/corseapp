@@ -7,8 +7,9 @@ header('Access-Control-Allow-Origin: *');
 include_once '../config/database.php';
 
 try {
-    // Create connection
-    $conn = new mysqli($host, $username, $password, $database);
+    // Create database instance and get connection
+    $database = new Database();
+    $conn = $database->getConnection();
 
     // Check connection
     if ($conn->connect_error) {
@@ -24,16 +25,15 @@ try {
     }
 
     $drivers = array();
-    
+
     if ($result->num_rows > 0) {
-        while($row = $result->fetch_assoc()) {
+        while ($row = $result->fetch_assoc()) {
             $drivers[] = $row;
         }
     }
-    
+
     // Return JSON response
     echo json_encode($drivers);
-    
 } catch (Exception $e) {
     // Return error as JSON
     echo json_encode(array('error' => $e->getMessage()));
@@ -43,4 +43,3 @@ try {
         $conn->close();
     }
 }
-?>

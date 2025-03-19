@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'screens/home_screen.dart';
+import 'screens/admin_login_screen.dart';
+import 'screens/admin_news_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -16,7 +18,12 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.red,
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.red),
       ),
-      home: const HomeScreen(),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const HomeScreen(),
+        '/admin': (context) => const AdminLoginScreen(),
+        '/admin/news': (context) => const AdminNewsScreen(),
+      },
       debugShowCheckedModeBanner: false,
     );
   }

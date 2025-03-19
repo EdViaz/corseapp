@@ -24,7 +24,9 @@ class _NewsScreenState extends State<NewsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Image.asset("images/f1logo.png", width: 120),
+        title: Center(
+          child: Image.asset("images/f1logo.png", width: 120),
+        ),
         backgroundColor: Colors.red,
       ),
       body: FutureBuilder<List<News>>(
