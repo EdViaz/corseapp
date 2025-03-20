@@ -36,7 +36,8 @@ CREATE TABLE IF NOT EXISTS news (
   title VARCHAR(255) NOT NULL,
   content TEXT NOT NULL,
   image_url VARCHAR(255),
-  publish_date DATETIME NOT NULL
+  publish_date DATETIME NOT NULL,
+  additional_images TEXT
 );
 
 -- Insert sample data

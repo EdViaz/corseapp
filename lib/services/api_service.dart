@@ -6,9 +6,9 @@ class ApiService {
   // Base URL for the PHP API
   // For web browser testing, we need to use the correct URL format
 
-  //final String baseUrl = 'http://localhost/backend/api';
+ final String baseUrl = 'http://localhost/backend/api';
 
-  final String baseUrl = 'http://192.168.0.30/backend/api';
+  //final String baseUrl = 'http://192.168.0.30/backend/api';
 
   final bool debugMode = true;
 

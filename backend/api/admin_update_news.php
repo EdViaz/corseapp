@@ -57,8 +57,9 @@ try {
     // Check if we're updating an existing news item or creating a new one
     if (isset($data['id']) && $data['id'] > 0) {
         // Update existing news
-        $stmt = $conn->prepare("UPDATE news SET title = ?, content = ?, image_url = ?, publish_date = ? WHERE id = ?");
-        $stmt->bind_param("ssssi", $data['title'], $data['content'], $data['image_url'], $data['publish_date'], $data['id']);
+        $stmt = $conn->prepare("UPDATE news SET title = ?, content = ?, image_url = ?, publish_date = ?, additional_images = ? WHERE id = ?");
+        $additional_images = isset($data['additional_images']) ? $data['additional_images'] : '';
+        $stmt->bind_param("sssssi", $data['title'], $data['content'], $data['image_url'], $data['publish_date'], $additional_images, $data['id']);
         $stmt->execute();
 
         if ($stmt->affected_rows > 0) {

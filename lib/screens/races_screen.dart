@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/f1_models.dart';
 import '../services/api_service.dart';
+import '../services/image_service.dart';
 
 class RacesScreen extends StatefulWidget {
   const RacesScreen({super.key});
@@ -91,8 +92,10 @@ class _RacesScreenState extends State<RacesScreen> with SingleTickerProviderStat
           child: ListTile(
             leading: race.flagUrl.isNotEmpty
                 ? Image.network(
-                    race.flagUrl,
-                    width: 40,
+                    ImageService.getProxyImageUrl(
+                      race.flagUrl,
+                      width: 40,
+                    ),
                     errorBuilder: (context, error, stackTrace) {
                       return const Icon(Icons.flag, size: 40);
                     },

@@ -5,7 +5,10 @@ import '../models/f1_models.dart';
 
 class AdminService {
   // Base URL for the PHP API
-  final String baseUrl = 'http://192.168.0.30/backend/api';
+
+   final String baseUrl = 'http://localhost/backend/api';
+
+  //final String baseUrl = 'http://192.168.0.30/backend/api';
 
   // Store the auth token after login
   String? _authToken;
@@ -99,6 +102,7 @@ class AdminService {
           'content': news.content,
           'image_url': news.imageUrl,
           'publish_date': news.publishDate.toIso8601String(),
+          'additional_images': news.additionalImages,
         }),
       );
 
