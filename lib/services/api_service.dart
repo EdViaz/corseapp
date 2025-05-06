@@ -1,12 +1,13 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/f1_models.dart';
+import '../models/driver_details.dart';
 
 class ApiService {
   // Base URL for the PHP API
   // For web browser testing, we need to use the correct URL format
 
- final String baseUrl = 'http://localhost/backend/api';
+  final String baseUrl = 'http://localhost/backend/api';
 
   //final String baseUrl = 'http://192.168.0.30/backend/api';
 
@@ -142,6 +143,74 @@ class ApiService {
         }
       } else {
         throw Exception('Failed to load races: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Network error: ${e.toString()}');
+    }
+  }
+
+  // Fetch detailed driver information
+  Future<DriverDetails> getDriverDetails(int driverId) async {
+    try {
+      // In una implementazione reale, questo endpoint dovrebbe esistere nel backend
+      final response = await http.get(
+        Uri.parse('$baseUrl/drivers.php?id=$driverId'),
+      );
+
+      if (debugMode) {
+        print('Driver Details API Response Status: ${response.statusCode}');
+        print('Driver Details API Response Body: ${response.body}');
+      }
+
+      if (response.statusCode == 200) {
+        try {
+          if (response.body.isEmpty) {
+            throw Exception('Empty response from server');
+          }
+
+          // Poiché l'API attuale potrebbe non supportare dettagli avanzati,
+          // creiamo dati di esempio per la dimostrazione
+          List<dynamic> data = json.decode(response.body);
+          var driverData = data.firstWhere(
+            (driver) =>
+                driver['id'] == driverId ||
+                int.parse(driver['id'].toString()) == driverId,
+            orElse: () => throw Exception('Driver not found'),
+          );
+
+          // Aggiungiamo dati fittizi per la dimostrazione
+          driverData['nationality'] = 'Italia'; // Esempio
+          driverData['number'] = 16; // Esempio
+          driverData['biography'] =
+              'Biografia del pilota. Questo è un testo di esempio che descrive la carriera e la vita del pilota.'; // Esempio
+          driverData['statistics'] = {
+            'wins': 5,
+            'podiums': 15,
+            'poles': 8,
+            'fastestLaps': 7,
+            'qualifyingWins': 12,
+            'teammateQualifyingWins': 8,
+            'raceWins': 14,
+            'teammateRaceWins': 6,
+            'teammatePoints': 120,
+          };
+          driverData['media_gallery'] = [
+            'https://www.formula1.com/content/dam/fom-website/drivers/2023Drivers/leclerc.jpg.img.1920.medium.jpg',
+            'https://www.formula1.com/content/dam/fom-website/manual/Misc/2019carlossainz/Monaco/sainz-monaco-2019-race.jpg.transform/9col/image.jpg',
+            'https://www.formula1.com/content/dam/fom-website/sutton/2022/Italy/Sunday/1422823534.jpg.transform/9col/image.jpg',
+            'https://www.formula1.com/content/dam/fom-website/sutton/2022/Italy/Sunday/1422823534.jpg.transform/9col/image.jpg',
+          ];
+
+          return DriverDetails.fromJson(driverData);
+        } catch (e) {
+          throw Exception(
+            'Invalid JSON response or driver not found: ${e.toString()}',
+          );
+        }
+      } else {
+        throw Exception(
+          'Failed to load driver details: ${response.statusCode}',
+        );
       }
     } catch (e) {
       throw Exception('Network error: ${e.toString()}');
