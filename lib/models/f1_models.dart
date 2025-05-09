@@ -40,6 +40,7 @@ class Driver {
   final int points;
   final String imageUrl;
   final int position;
+  final int victories; // Numero di vittorie per gestire i casi di parità
 
   Driver({
     required this.id,
@@ -48,6 +49,7 @@ class Driver {
     required this.points,
     required this.imageUrl,
     required this.position,
+    this.victories = 0, // Valore predefinito a 0
   });
 
   factory Driver.fromJson(Map<String, dynamic> json) {
@@ -67,6 +69,10 @@ class Driver {
           json['position'] is int
               ? json['position']
               : int.tryParse(json['position']?.toString() ?? '0') ?? 0,
+      victories:
+          json['victories'] is int
+              ? json['victories']
+              : int.tryParse(json['victories']?.toString() ?? '0') ?? 0,
     );
   }
 }

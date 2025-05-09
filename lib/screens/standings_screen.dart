@@ -69,36 +69,46 @@ class _StandingsScreenState extends State<StandingsScreen>
                         horizontal: 16.0,
                         vertical: 8.0,
                       ),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundImage: NetworkImage(driver.imageUrl),
-                        ),
-                        title: Text(driver.name),
-                        subtitle: Text(driver.team),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              '${driver.points} pts',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
+                      child: InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DriverDetailScreen(
+                                driverId: driver.id,
                               ),
                             ),
-                            IconButton(
-                              icon: const Icon(Icons.arrow_forward),
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder:
-                                        (context) => DriverDetailScreen(
-                                          driverId: driver.id,
-                                        ),
+                          );
+                        },
+                        child: ListTile(
+                          leading: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 30,
+                                alignment: Alignment.center,
+                                child: Text(
+                                  '${driver.position}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
                                   ),
-                                );
-                              },
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              CircleAvatar(
+                                backgroundImage: NetworkImage(driver.imageUrl),
+                              ),
+                            ],
+                          ),
+                          title: Text(driver.name),
+                          subtitle: Text(driver.team),
+                          trailing: Text(
+                            '${driver.points} pts',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
                             ),
-                          ],
+                          ),
                         ),
                       ),
                     );
@@ -130,31 +140,39 @@ class _StandingsScreenState extends State<StandingsScreen>
                         horizontal: 8.0,
                         vertical: 4.0,
                       ),
-                      child: ListTile(
-                        leading: Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: Colors.red,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Center(
-                            child: Text(
-                              '${constructor.position}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
+                      child: InkWell(
+                        onTap: () {
+                          // Qui si potrebbe aggiungere una schermata di dettaglio del team in futuro
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Team: ${constructor.name}')),
+                          );
+                        },
+                        child: ListTile(
+                          leading: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: Text(
+                                '${constructor.position}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        title: Text(
-                          constructor.name,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        trailing: Text(
-                          '${constructor.points} pts',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                          title: Text(
+                            constructor.name,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          trailing: Text(
+                            '${constructor.points} pts',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
                         ),
                       ),
                     );

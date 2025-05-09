@@ -4,7 +4,7 @@ header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 
 // Include database connection
-include_once '../config/database.php';
+include_once '../config/config.php';
 
 try {
     // Create database instance and get connection

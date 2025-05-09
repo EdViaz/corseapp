@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/preferences_service.dart';
+import 'admin_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -64,6 +65,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           _buildSectionTitle('Gestione Dati'),
           _buildResetButton(),
+          const Divider(),
+          
+          _buildSectionTitle('Amministrazione'),
+          _buildAdminButton(),
         ],
       ),
     );
@@ -236,6 +241,63 @@ class _SettingsScreenState extends State<SettingsScreen> {
             await _preferencesService.resetAllPreferences();
             await _loadPreferences(); // Ricarica le preferenze predefinite
           }
+        },
+      ),
+    );
+  }
+  
+  Widget _buildAdminButton() {
+    return Card(
+      elevation: 2,
+      child: ListTile(
+        leading: const Icon(Icons.admin_panel_settings),
+        title: const Text('Accesso Amministratore'),
+        subtitle: const Text('Gestisci piloti, team e notizie'),
+        onTap: () {
+          // Mostra dialogo di login
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Login Amministratore'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    decoration: const InputDecoration(
+                      labelText: 'Username',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    obscureText: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Password',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Annulla'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    // Per semplicità, non implementiamo una vera autenticazione
+                    // ma passiamo direttamente alla schermata di amministrazione
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const AdminScreen()),
+                    );
+                  },
+                  child: const Text('Accedi'),
+                ),
+              ],
+            ),
+          );
         },
       ),
     );

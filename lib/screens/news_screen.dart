@@ -23,19 +23,7 @@ class _NewsScreenState extends State<NewsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Center(child: Image.asset("images/f1logo.png", width: 120)),
-        backgroundColor: Colors.red,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.admin_panel_settings),
-            onPressed: () {
-              Navigator.of(context).pushNamed('/admin');
-            },
-            tooltip: 'Admin Area',
-          ),
-        ],
-      ),
+
       body: FutureBuilder<List<News>>(
         future: _newsFuture,
         builder: (context, snapshot) {

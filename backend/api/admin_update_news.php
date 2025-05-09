@@ -48,7 +48,7 @@ if (empty($token)) {
 }
 
 // Include database connection
-require_once '../config/database.php';
+include '../config/config.php';
 
 try {
     $db = new Database();
