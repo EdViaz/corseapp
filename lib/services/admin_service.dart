@@ -91,12 +91,14 @@ class AdminService {
 
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/admin_update_news.php'),
+        Uri.parse('$baseUrl/admin_api.php'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $_authToken',
         },
         body: jsonEncode({
+          'entity_type': 'news',
+          'action': news.id > 0 ? 'update' : 'create',
           if (news.id > 0) 'id': news.id,
           'title': news.title,
           'content': news.content,
@@ -120,6 +122,41 @@ class AdminService {
       return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
+  
+  // Delete News
+  Future<Map<String, dynamic>> deleteNews(int id) async {
+    if (!isLoggedIn()) {
+      return {'success': false, 'message': 'Not authenticated'};
+    }
+    
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/admin_api.php'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $_authToken',
+        },
+        body: jsonEncode({
+          'entity_type': 'news',
+          'action': 'delete',
+          'id': id,
+        }),
+      );
+      
+      final data = jsonDecode(response.body);
+      
+      if (response.statusCode == 200 && data['success'] == true) {
+        return {'success': true, 'message': data['message']};
+      } else {
+        return {
+          'success': false,
+          'message': data['error'] ?? 'Operation failed',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
+    }
+  }
 
   // CRUD operations for Drivers
   Future<Map<String, dynamic>> createOrUpdateDriver(Driver driver) async {
@@ -129,12 +166,14 @@ class AdminService {
 
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/admin_update_drivers.php'),
+        Uri.parse('$baseUrl/admin_api.php'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $_authToken',
         },
         body: jsonEncode({
+          'entity_type': 'drivers',
+          'action': driver.id > 0 ? 'update' : 'create',
           if (driver.id > 0) 'id': driver.id,
           'name': driver.name,
           'team': driver.team,
@@ -158,6 +197,41 @@ class AdminService {
       return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
+  
+  // Delete Driver
+  Future<Map<String, dynamic>> deleteDriver(int id) async {
+    if (!isLoggedIn()) {
+      return {'success': false, 'message': 'Not authenticated'};
+    }
+    
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/admin_api.php'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $_authToken',
+        },
+        body: jsonEncode({
+          'entity_type': 'drivers',
+          'action': 'delete',
+          'id': id,
+        }),
+      );
+      
+      final data = jsonDecode(response.body);
+      
+      if (response.statusCode == 200 && data['success'] == true) {
+        return {'success': true, 'message': data['message']};
+      } else {
+        return {
+          'success': false,
+          'message': data['error'] ?? 'Operation failed',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
+    }
+  }
 
   // CRUD operations for Constructors
   Future<Map<String, dynamic>> createOrUpdateConstructor(
@@ -169,12 +243,14 @@ class AdminService {
 
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/admin_update_constructors.php'),
+        Uri.parse('$baseUrl/admin_api.php'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $_authToken',
         },
         body: jsonEncode({
+          'entity_type': 'constructors',
+          'action': constructor.id > 0 ? 'update' : 'create',
           if (constructor.id > 0) 'id': constructor.id,
           'name': constructor.name,
           'points': constructor.points,
@@ -197,6 +273,41 @@ class AdminService {
       return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
+  
+  // Delete Constructor
+  Future<Map<String, dynamic>> deleteConstructor(int id) async {
+    if (!isLoggedIn()) {
+      return {'success': false, 'message': 'Not authenticated'};
+    }
+    
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/admin_api.php'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $_authToken',
+        },
+        body: jsonEncode({
+          'entity_type': 'constructors',
+          'action': 'delete',
+          'id': id,
+        }),
+      );
+      
+      final data = jsonDecode(response.body);
+      
+      if (response.statusCode == 200 && data['success'] == true) {
+        return {'success': true, 'message': data['message']};
+      } else {
+        return {
+          'success': false,
+          'message': data['error'] ?? 'Operation failed',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
+    }
+  }
 
   // CRUD operations for Races
   Future<Map<String, dynamic>> createOrUpdateRace(Race race) async {
@@ -206,12 +317,14 @@ class AdminService {
 
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/admin_update_races.php'),
+        Uri.parse('$baseUrl/admin_api.php'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $_authToken',
         },
         body: jsonEncode({
+          'entity_type': 'races',
+          'action': race.id > 0 ? 'update' : 'create',
           if (race.id > 0) 'id': race.id,
           'name': race.name,
           'circuit': race.circuit,
@@ -226,6 +339,41 @@ class AdminService {
 
       if (response.statusCode == 200 && data['success'] == true) {
         return {'success': true, 'message': data['message'], 'id': data['id']};
+      } else {
+        return {
+          'success': false,
+          'message': data['error'] ?? 'Operation failed',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: ${e.toString()}'};
+    }
+  }
+  
+  // Delete Race
+  Future<Map<String, dynamic>> deleteRace(int id) async {
+    if (!isLoggedIn()) {
+      return {'success': false, 'message': 'Not authenticated'};
+    }
+    
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/admin_api.php'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $_authToken',
+        },
+        body: jsonEncode({
+          'entity_type': 'races',
+          'action': 'delete',
+          'id': id,
+        }),
+      );
+      
+      final data = jsonDecode(response.body);
+      
+      if (response.statusCode == 200 && data['success'] == true) {
+        return {'success': true, 'message': data['message']};
       } else {
         return {
           'success': false,

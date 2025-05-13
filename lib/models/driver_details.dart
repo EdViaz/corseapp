@@ -1,6 +1,7 @@
 class DriverDetails {
   final int id;
   final String name;
+  final String surname;
   final String team;
   final int points;
   final String imageUrl;
@@ -15,6 +16,7 @@ class DriverDetails {
   DriverDetails({
     required this.id,
     required this.name,
+    required this.surname,
     required this.team,
     required this.points,
     required this.imageUrl,
@@ -34,6 +36,7 @@ class DriverDetails {
               ? json['id']
               : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
       name: json['name'] ?? '',
+      surname: json['surname'] ?? '',
       team: json['team'] ?? '',
       points:
           json['points'] is int
@@ -64,6 +67,7 @@ class DriverDetails {
   DriverDetails copyWith({
     int? id,
     String? name,
+    String? surname,
     String? team,
     int? points,
     String? imageUrl,
@@ -78,6 +82,7 @@ class DriverDetails {
     return DriverDetails(
       id: id ?? this.id,
       name: name ?? this.name,
+      surname: surname ?? this.surname,
       team: team ?? this.team,
       points: points ?? this.points,
       imageUrl: imageUrl ?? this.imageUrl,

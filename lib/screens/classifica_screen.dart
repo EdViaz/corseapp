@@ -26,8 +26,8 @@ class _ClassificaScreenState extends State<ClassificaScreen> {
           data
               .map(
                 (driver) => Pilota(
-                  nome: driver.name.split(' ').first,
-                  cognome: driver.name.split(' ').last,
+                  nome: driver.name,
+                  cognome: driver.surname,
                   punti: driver.points,
                 ),
               )

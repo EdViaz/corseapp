@@ -25,19 +25,19 @@ class _AdminNewsScreenState extends State<AdminNewsScreen> {
     super.initState();
     _checkAuthentication();
   }
-  
+
   Future<void> _checkAuthentication() async {
     setState(() {
       _isLoading = true;
     });
-    
+
     _isAuthenticated = await _adminService.ensureLoggedIn();
-    
+
     if (!_isAuthenticated && mounted) {
       // Redirect to login if not authenticated
       Navigator.of(context).pushReplacementNamed('/admin');
     }
-    
+
     if (mounted) {
       setState(() {
         _isLoading = false;
@@ -70,7 +70,7 @@ class _AdminNewsScreenState extends State<AdminNewsScreen> {
         content: _contentController.text.trim(),
         imageUrl: _imageUrlController.text.trim(),
         publishDate: DateTime.now(),
-        additionalImages: '', // No additional images for now
+        additionalImages: [], 
       );
 
       final result = await _adminService.createOrUpdateNews(news);
@@ -195,9 +195,10 @@ class _AdminNewsScreenState extends State<AdminNewsScreen> {
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
-                child: _isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('PUBLISH NEWS'),
+                child:
+                    _isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text('PUBLISH NEWS'),
               ),
             ],
           ),

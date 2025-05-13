@@ -17,15 +17,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit();
 }
 
-// Get JSON data and handle potential errors
-$jsonInput = file_get_contents('php://input');
-if ($jsonInput === false) {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'error' => 'Failed to read request body']);
-    exit();
-}
-
-$data = json_decode($jsonInput, true);
+// Get JSON data
+$data = json_decode(file_get_contents('php://input'), true);
 
 // Check if data is valid
 if (!$data || !isset($data['username']) || !isset($data['password'])) {
@@ -33,17 +26,15 @@ if (!$data || !isset($data['username']) || !isset($data['password'])) {
     echo json_encode(['success' => false, 'error' => 'Invalid request data']);
     exit();
 }
-
-// Trim and sanitize inputs
-$username = htmlspecialchars(trim($data['username']));
-$password = trim($data['password']);
-
-// Include database connection
 include_once '../config/config.php';
 
 try {
     $database = new Database();
     $conn = $database->getConnection();
+
+    // Estrai username e password dai dati ricevuti
+    $username = $data['username'];
+    $password = $data['password'];
 
     // Recupera l'utente dal database
     $stmt = $conn->prepare("SELECT id, username, password FROM admin WHERE username = :username LIMIT 1");
@@ -56,11 +47,11 @@ try {
         $token = bin2hex(random_bytes(32));
         // In una vera app, salva il token nel db
         http_response_code(200);
-        // Restituisci il token al clien
+        // Restituisci il token al client
         echo json_encode([
             'success' => true,
             'message' => 'Login successful',
-            'token' => $token
+           // 'token' => $token
         ]);
     } else {
         http_response_code(401);

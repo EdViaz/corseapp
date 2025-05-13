@@ -1,12 +1,14 @@
 // Models for F1 app
 
+import 'dart:convert';
+
 class News {
   final int id;
   final String title;
   final String content;
   final String imageUrl;
   final DateTime publishDate;
-  final String additionalImages;
+  final List<String> additionalImages;
 
   News({
     required this.id,
@@ -18,17 +20,31 @@ class News {
   });
 
   factory News.fromJson(Map<String, dynamic> json) {
+    List<String> parseAdditionalImages(dynamic images) {
+      if (images == null) return [];
+      if (images is List) return images.map((e) => e.toString()).toList();
+      if (images is String) {
+        if (images.isEmpty) return [];
+        try {
+          final parsed = jsonDecode(images);
+          if (parsed is List) return parsed.map((e) => e.toString()).toList();
+          return [];
+        } catch (_) {
+          return [images]; // Se non è JSON, considera come singola immagine
+        }
+      }
+      return [];
+    }
+    
     return News(
-      id:
-          json['id'] is int
-              ? json['id']
-              : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      id: json['id'] is int
+          ? json['id']
+          : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
       title: json['title'] ?? '',
       content: json['content'] ?? '',
       imageUrl: json['image_url'] ?? '',
-      publishDate:
-          DateTime.tryParse(json['publish_date'] ?? '') ?? DateTime.now(),
-      additionalImages: json['additional_images'] ?? '',
+      publishDate: DateTime.tryParse(json['publish_date'] ?? '') ?? DateTime.now(),
+      additionalImages: parseAdditionalImages(json['additional_images']),
     );
   }
 }
@@ -36,6 +52,7 @@ class News {
 class Driver {
   final int id;
   final String name;
+  final String surname;
   final String team;
   final int points;
   final String imageUrl;
@@ -45,6 +62,7 @@ class Driver {
   Driver({
     required this.id,
     required this.name,
+    required this.surname,
     required this.team,
     required this.points,
     required this.imageUrl,
@@ -59,6 +77,7 @@ class Driver {
               ? json['id']
               : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
       name: json['name'] ?? '',
+      surname: json['surname'] ?? '',
       team: json['team'] ?? '',
       points:
           json['points'] is int
@@ -110,6 +129,8 @@ class Constructor {
               : int.tryParse(json['position']?.toString() ?? '0') ?? 0,
     );
   }
+
+
 }
 
 class Race {

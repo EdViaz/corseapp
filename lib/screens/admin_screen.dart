@@ -16,6 +16,11 @@ class _AdminScreenState extends State<AdminScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final ApiService _apiService = ApiService();
+  final String baseUrl = 'http://localhost/backend/api';
+
+  // Token di autorizzazione per le chiamate API admin
+  final String authToken =
+      'your_auth_token_here'; // In un'app reale, questo dovrebbe essere ottenuto tramite login
 
   // Futures per caricare i dati
   late Future<List<Driver>> _driversFuture;
@@ -118,7 +123,7 @@ class _AdminScreenState extends State<AdminScreen>
                   leading: CircleAvatar(
                     backgroundImage: NetworkImage(driver.imageUrl),
                   ),
-                  title: Text(driver.name),
+                  title: Text('${driver.name} ${driver.surname}'),
                   subtitle: Text('${driver.team} - ${driver.points} punti'),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -130,18 +135,55 @@ class _AdminScreenState extends State<AdminScreen>
                       IconButton(
                         icon: const Icon(Icons.delete),
                         onPressed:
-                            () => _showDeleteConfirmation(context, 'pilota', () {
-                              // Qui implementare la chiamata API per eliminare il pilota
+                            () => _showDeleteConfirmation(
+                              context,
+                              'pilota',
+                              () async {
+                                // Chiamata API per eliminare il pilota
+                                final response = await http.post(
+                                  Uri.parse('$baseUrl/admin_api.php'),
+                                  body: jsonEncode({
+                                    "entity_type": "drivers",
+                                    "action": "delete",
+                                    "id": driver.id,
+                                  }),
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': 'Bearer $authToken',
+                                  },
+                                );
 
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Pilota eliminato con successo',
-                                  ),
-                                ),
-                              );
-                              _refreshData();
-                            }),
+                                if (response.statusCode == 200) {
+                                  final data = jsonDecode(response.body);
+                                  if (data['success']) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Pilota eliminato con successo',
+                                        ),
+                                      ),
+                                    );
+                                    _refreshData();
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          'Errore: ${data['error'] ?? "Errore sconosciuto"}',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Errore di connessione al server',
+                                      ),
+                                    ),
+                                  );
+                                }
+                              },
+                            ),
                       ),
                     ],
                   ),
@@ -197,15 +239,55 @@ class _AdminScreenState extends State<AdminScreen>
                       IconButton(
                         icon: const Icon(Icons.delete),
                         onPressed:
-                            () => _showDeleteConfirmation(context, 'team', () {
-                              // Qui implementare la chiamata API per eliminare il team
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Team eliminato con successo'),
-                                ),
-                              );
-                              _refreshData();
-                            }),
+                            () => _showDeleteConfirmation(
+                              context,
+                              'team',
+                              () async {
+                                // Chiamata API per eliminare il team
+                                final response = await http.post(
+                                  Uri.parse('$baseUrl/admin_api.php'),
+                                  body: jsonEncode({
+                                    "entity_type": "constructors",
+                                    "action": "delete",
+                                    "id": constructor.id,
+                                  }),
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': 'Bearer $authToken',
+                                  },
+                                );
+
+                                if (response.statusCode == 200) {
+                                  final data = jsonDecode(response.body);
+                                  if (data['success']) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Team eliminato con successo',
+                                        ),
+                                      ),
+                                    );
+                                    _refreshData();
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          'Errore: ${data['error'] ?? "Errore sconosciuto"}',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Errore di connessione al server',
+                                      ),
+                                    ),
+                                  );
+                                }
+                              },
+                            ),
                       ),
                     ],
                   ),
@@ -268,17 +350,55 @@ class _AdminScreenState extends State<AdminScreen>
                       IconButton(
                         icon: const Icon(Icons.delete),
                         onPressed:
-                            () => _showDeleteConfirmation(context, 'notizia', () {
-                              // Qui implementare la chiamata API per eliminare la notizia
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Notizia eliminata con successo',
-                                  ),
-                                ),
-                              );
-                              _refreshData();
-                            }),
+                            () => _showDeleteConfirmation(
+                              context,
+                              'notizia',
+                              () async {
+                                // Chiamata API per eliminare la notizia
+                                final response = await http.post(
+                                  Uri.parse('$baseUrl/admin_api.php'),
+                                  body: jsonEncode({
+                                    "entity_type": "news",
+                                    "action": "delete",
+                                    "id": news.id,
+                                  }),
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': 'Bearer $authToken',
+                                  },
+                                );
+
+                                if (response.statusCode == 200) {
+                                  final data = jsonDecode(response.body);
+                                  if (data['success']) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Notizia eliminata con successo',
+                                        ),
+                                      ),
+                                    );
+                                    _refreshData();
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          'Errore: ${data['error'] ?? "Errore sconosciuto"}',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Errore di connessione al server',
+                                      ),
+                                    ),
+                                  );
+                                }
+                              },
+                            ),
                       ),
                     ],
                   ),
@@ -326,6 +446,9 @@ class _AdminScreenState extends State<AdminScreen>
     final TextEditingController nameController = TextEditingController(
       text: driver?.name ?? '',
     );
+    final TextEditingController surnameController = TextEditingController(
+      text: driver?.surname ?? '',
+    );
     final TextEditingController teamController = TextEditingController(
       text: driver?.team ?? '',
     );
@@ -351,6 +474,10 @@ class _AdminScreenState extends State<AdminScreen>
                   TextField(
                     controller: nameController,
                     decoration: const InputDecoration(labelText: 'Nome'),
+                  ),
+                  TextField(
+                    controller: surnameController,
+                    decoration: const InputDecoration(labelText: 'Cognome'),
                   ),
                   TextField(
                     controller: teamController,
@@ -384,18 +511,22 @@ class _AdminScreenState extends State<AdminScreen>
                 onPressed: () async {
                   if (driver != null) {
                     final response = await http.post(
-                      Uri.parse(
-                        'http://localhost/backend/api/admin_update_drivers.php',
-                      ),
+                      Uri.parse('$baseUrl/admin_api.php'),
                       body: jsonEncode({
+                        "entity_type": "drivers",
+                        "action": "update",
                         "id": driver.id,
                         "name": nameController.text,
+                        "surname": surnameController.text,
                         "team": teamController.text,
                         "points": int.parse(pointsController.text),
                         "position": int.parse(positionController.text),
-                        "imageUrl": imageUrlController.text,
+                        "image_url": imageUrlController.text,
                       }),
-                      headers: {'Content-Type': 'application/json'},
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer $authToken',
+                      },
                     );
                     if (response.statusCode == 200) {
                       final data = jsonDecode(response.body);
@@ -408,7 +539,49 @@ class _AdminScreenState extends State<AdminScreen>
                       }
                     }
                   } else {
-                    //aggiungi pilota
+                    // Aggiungi pilota
+                    final response = await http.post(
+                      Uri.parse('$baseUrl/admin_api.php'),
+                      body: jsonEncode({
+                        "entity_type": "drivers",
+                        "action": "create",
+                        "name": nameController.text,
+                        "surname": surnameController.text,
+                        "team": teamController.text,
+                        "points": int.parse(pointsController.text),
+                        "position": int.parse(positionController.text),
+                        "image_url": imageUrlController.text,
+                      }),
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer $authToken',
+                      },
+                    );
+
+                    if (response.statusCode == 200) {
+                      final data = jsonDecode(response.body);
+                      if (data['success']) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Pilota aggiunto con successo'),
+                          ),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Errore: ${data['error'] ?? "Errore sconosciuto"}',
+                            ),
+                          ),
+                        );
+                      }
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Errore di connessione al server'),
+                        ),
+                      );
+                    }
                   }
 
                   Navigator.pop(context);
@@ -481,19 +654,63 @@ class _AdminScreenState extends State<AdminScreen>
                 child: const Text('Annulla'),
               ),
               TextButton(
-                onPressed: () {
-                  // Qui implementare la chiamata API per salvare il team
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        constructor == null
-                            ? 'Team aggiunto con successo'
-                            : 'Team aggiornato con successo',
-                      ),
-                    ),
+                onPressed: () async {
+                  // Implementazione chiamata API per salvare il team
+                  final action = constructor == null ? "create" : "update";
+                  final Map<String, dynamic> requestData = {
+                    "entity_type": "constructors",
+                    "action": action,
+                    "name": nameController.text,
+                    "points": int.parse(pointsController.text),
+                    "position": int.parse(positionController.text),
+                    "logo_url": logoUrlController.text,
+                  };
+
+                  // Aggiungi l'ID solo se stiamo aggiornando un team esistente
+                  if (constructor != null) {
+                    requestData["id"] = constructor.id;
+                  }
+
+                  final response = await http.post(
+                    Uri.parse('$baseUrl/admin_api.php'),
+                    body: jsonEncode(requestData),
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': 'Bearer $authToken',
+                    },
                   );
-                  _refreshData();
+
+                  Navigator.pop(context);
+
+                  if (response.statusCode == 200) {
+                    final data = jsonDecode(response.body);
+                    if (data['success']) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            constructor == null
+                                ? 'Team aggiunto con successo'
+                                : 'Team aggiornato con successo',
+                          ),
+                        ),
+                      );
+                      _refreshData();
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Errore: ${data['error'] ?? "Errore sconosciuto"}',
+                          ),
+                        ),
+                      );
+                    }
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Errore di connessione al server'),
+                      ),
+                    );
+                  }
                 },
                 child: const Text('Salva'),
               ),
@@ -547,19 +764,63 @@ class _AdminScreenState extends State<AdminScreen>
                 child: const Text('Annulla'),
               ),
               TextButton(
-                onPressed: () {
-                  // Qui implementare la chiamata API per salvare la notizia
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        news == null
-                            ? 'Notizia aggiunta con successo'
-                            : 'Notizia aggiornata con successo',
-                      ),
-                    ),
+                onPressed: () async {
+                  // Implementazione chiamata API per salvare la notizia
+                  final action = news == null ? "create" : "update";
+                  final Map<String, dynamic> requestData = {
+                    "entity_type": "news",
+                    "action": action,
+                    "title": titleController.text,
+                    "content": contentController.text,
+                    "image_url": imageUrlController.text,
+                    "publish_date": DateTime.now().toIso8601String(),
+                  };
+
+                  // Aggiungi l'ID solo se stiamo aggiornando una notizia esistente
+                  if (news != null) {
+                    requestData["id"] = news.id;
+                  }
+
+                  final response = await http.post(
+                    Uri.parse('$baseUrl/admin_api.php'),
+                    body: jsonEncode(requestData),
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': 'Bearer $authToken',
+                    },
                   );
-                  _refreshData();
+
+                  Navigator.pop(context);
+
+                  if (response.statusCode == 200) {
+                    final data = jsonDecode(response.body);
+                    if (data['success']) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            news == null
+                                ? 'Notizia aggiunta con successo'
+                                : 'Notizia aggiornata con successo',
+                          ),
+                        ),
+                      );
+                      _refreshData();
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Errore: ${data['error'] ?? "Errore sconosciuto"}',
+                          ),
+                        ),
+                      );
+                    }
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Errore di connessione al server'),
+                      ),
+                    );
+                  }
                 },
                 child: const Text('Salva'),
               ),

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../models/driver_details.dart';
 import '../services/api_service.dart';
 import '../services/image_service.dart';
-import '../services/preferences_service.dart';
 
 class DriverDetailScreen extends StatefulWidget {
   final int driverId;
@@ -50,20 +49,11 @@ class _DriverDetailScreenState extends State<DriverDetailScreen>
     });
   }
 
-  final PreferencesService _preferencesService = PreferencesService();
-
-  void _toggleFavorite() async {
-    final newValue = !_isFavorite;
+  void _toggleFavorite() {
     setState(() {
-      _isFavorite = newValue;
+      _isFavorite = !_isFavorite;
     });
-    
-    // Salva lo stato dei preferiti
-    if (newValue) {
-      await _preferencesService.addFavoriteDriver(widget.driverId);
-    } else {
-      await _preferencesService.removeFavoriteDriver(widget.driverId);
-    }
+    // Qui si potrebbe implementare la logica per salvare i preferiti
   }
 
   @override
@@ -141,7 +131,7 @@ class _DriverDetailScreenState extends State<DriverDetailScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  driver.name,
+                  driver.name +" " + driver.surname,
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
