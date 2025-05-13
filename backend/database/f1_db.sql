@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Creato il: Mag 13, 2025 alle 11:27
+-- Creato il: Mag 14, 2025 alle 01:02
 -- Versione del server: 10.4.32-MariaDB
 -- Versione PHP: 8.2.12
 
@@ -38,7 +38,7 @@ CREATE TABLE `admin` (
 --
 
 INSERT INTO `admin` (`id`, `username`, `password`) VALUES
-(1, 'admin', '$2y$10$XTTHmZSPUPyaGVGS9nDmzuQmvyarGBkP9RLxs/0VLa3J5XNOJmGym');
+(1, 'admin', '$2y$10$h769Emb.EiSnETKTYsC29uRWFosuZuxoYT8VlFunVlpAXtkt4hSLK');
 
 -- --------------------------------------------------------
 
@@ -53,6 +53,13 @@ CREATE TABLE `comments` (
   `content` text NOT NULL,
   `date` date NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+--
+-- Dump dei dati per la tabella `comments`
+--
+
+INSERT INTO `comments` (`id`, `news_id`, `user_id`, `content`, `date`) VALUES
+(2, 1, 1, 'test', '2025-05-14');
 
 -- --------------------------------------------------------
 
@@ -73,11 +80,16 @@ CREATE TABLE `constructors` (
 --
 
 INSERT INTO `constructors` (`id`, `name`, `points`, `logo_url`, `position`) VALUES
-(1, 'Red Bull Racing', 600, 'https://example.com/redbull.jpg', 1),
-(2, 'Ferrari', 540, 'https://example.com/ferrari.jpg', 2),
-(3, 'Mercedes', 500, 'https://example.com/mercedes.jpg', 3),
-(4, 'McLaren', 400, 'https://example.com/mclaren.jpg', 4),
-(5, 'Aston Martin', 250, 'https://example.com/astonmartin.jpg', 5);
+(1, 'Red Bull Racing', 600, 'https://media.formula1.com/content/dam/fom-website/teams/2025/red-bull-racing-logo.png', 1),
+(2, 'Ferrari', 540, 'https://media.formula1.com/content/dam/fom-website/teams/2025/ferrari-logo.png', 2),
+(3, 'Mercedes', 500, 'https://media.formula1.com/content/dam/fom-website/teams/2025/mercedes-logo.png', 3),
+(4, 'McLaren', 400, 'https://media.formula1.com/content/dam/fom-website/teams/2025/mclaren-logo.png', 4),
+(6, 'Williams', 0, 'https://media.formula1.com/content/dam/fom-website/teams/2025/williams-logo.png', 0),
+(7, 'Haas', 0, 'https://media.formula1.com/content/dam/fom-website/teams/2025/haas-logo.png', 0),
+(8, 'Aston Martin', 0, 'https://media.formula1.com/content/dam/fom-website/teams/2025/aston-martin-logo.png', 0),
+(9, 'Racing Bulls', 0, 'https://media.formula1.com/content/dam/fom-website/teams/2025/racing-bulls-logo.png', 0),
+(10, 'Alpine', 0, 'https://media.formula1.com/content/dam/fom-website/teams/2025/alpine-logo.png', 0),
+(11, 'Kick Sauber', 0, 'https://media.formula1.com/content/dam/fom-website/teams/2025/kick-sauber-logo.png', 0);
 
 -- --------------------------------------------------------
 
@@ -88,6 +100,7 @@ INSERT INTO `constructors` (`id`, `name`, `points`, `logo_url`, `position`) VALU
 CREATE TABLE `drivers` (
   `id` int(11) NOT NULL,
   `name` varchar(100) NOT NULL,
+  `surname` varchar(100) NOT NULL,
   `team` varchar(100) NOT NULL,
   `points` int(11) NOT NULL DEFAULT 0,
   `image_url` varchar(255) DEFAULT NULL,
@@ -98,12 +111,13 @@ CREATE TABLE `drivers` (
 -- Dump dei dati per la tabella `drivers`
 --
 
-INSERT INTO `drivers` (`id`, `name`, `team`, `points`, `image_url`, `position`) VALUES
-(1, 'Max Verstappen', 'Red Bull Racing', 450, 'https://example.com/verstappen.jpg', 1),
-(2, 'Lewis Hamilton', 'Mercedes', 350, 'https://example.com/hamilton.jpg', 2),
-(3, 'Charles Leclerc', 'Ferrari', 300, 'https://example.com/leclerc.jpg', 3),
-(4, 'Lando Norris', 'McLaren', 250, 'https://example.com/norris.jpg', 4),
-(5, 'Carlos Sainz', 'Ferrari', 240, 'https://example.com/sainz.jpg', 5);
+INSERT INTO `drivers` (`id`, `name`, `surname`, `team`, `points`, `image_url`, `position`) VALUES
+(1, 'Max', 'Verstappen', 'Red Bull Racing', 450, 'https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/M/MAXVER01_Max_Verstappen/maxver01.png', 1),
+(2, 'Lewis', 'Hamilton', 'Ferrari', 350, 'https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/L/LEWHAM01_Lewis_Hamilton/lewham01.png', 2),
+(3, 'Charles', 'Leclerc', 'Ferrari', 300, 'https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/C/CHALEC01_Charles_Leclerc/chalec01.png', 3),
+(4, 'Lando', 'Norris', 'McLaren', 250, 'https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/L/LANNOR01_Lando_Norris/lannor01.png', 4),
+(6, 'Oscar', 'Piastri', 'McLaren', 131, 'https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/O/OSCPIA01_Oscar_Piastri/oscpia01.png', 0),
+(7, 'George', 'Russel', 'Mercedes', 0, 'https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/G/GEORUS01_George_Russell/georus01.png', 0);
 
 -- --------------------------------------------------------
 
@@ -156,6 +170,25 @@ INSERT INTO `races` (`id`, `name`, `circuit`, `date`, `country`, `flag_url`) VAL
 (4, 'Miami Grand Prix', 'Miami International Autodrome', '2023-05-07', 'United States', 'https://example.com/usa.jpg'),
 (5, 'Monaco Grand Prix', 'Circuit de Monaco', '2023-05-28', 'Monaco', 'https://example.com/monaco.jpg');
 
+-- --------------------------------------------------------
+
+--
+-- Struttura della tabella `users`
+--
+
+CREATE TABLE `users` (
+  `id` int(11) NOT NULL,
+  `username` varchar(100) NOT NULL,
+  `password` varchar(100) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dump dei dati per la tabella `users`
+--
+
+INSERT INTO `users` (`id`, `username`, `password`) VALUES
+(1, 'EdViaz', '$2y$10$SGkoS3/pFxpY6kRnut25Ce24UaQaE136XinFZOEBSjzcVFjW5zpRS');
+
 --
 -- Indici per le tabelle scaricate
 --
@@ -171,7 +204,8 @@ ALTER TABLE `admin`
 --
 ALTER TABLE `comments`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `comments_ibfk_1` (`news_id`);
+  ADD KEY `comments_ibfk_1` (`news_id`),
+  ADD KEY `comments_ibfk_2` (`user_id`);
 
 --
 -- Indici per le tabelle `constructors`
@@ -198,6 +232,12 @@ ALTER TABLE `races`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indici per le tabelle `users`
+--
+ALTER TABLE `users`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- AUTO_INCREMENT per le tabelle scaricate
 --
 
@@ -211,19 +251,19 @@ ALTER TABLE `admin`
 -- AUTO_INCREMENT per la tabella `comments`
 --
 ALTER TABLE `comments`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT per la tabella `constructors`
 --
 ALTER TABLE `constructors`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT per la tabella `drivers`
 --
 ALTER TABLE `drivers`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT per la tabella `news`
@@ -238,6 +278,12 @@ ALTER TABLE `races`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
+-- AUTO_INCREMENT per la tabella `users`
+--
+ALTER TABLE `users`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
 -- Limiti per le tabelle scaricate
 --
 
@@ -245,7 +291,8 @@ ALTER TABLE `races`
 -- Limiti per la tabella `comments`
 --
 ALTER TABLE `comments`
-  ADD CONSTRAINT `comments_ibfk_1` FOREIGN KEY (`news_id`) REFERENCES `news` (`id`) ON DELETE CASCADE;
+  ADD CONSTRAINT `comments_ibfk_1` FOREIGN KEY (`news_id`) REFERENCES `news` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `comments_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
