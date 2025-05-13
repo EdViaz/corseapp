@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // Only allow POST requests
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
-    echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+    echo json_encode(['success' => false, 'error' => 'Metodo non consentito']);
     exit();
 }
 
@@ -23,31 +23,30 @@ $data = json_decode(file_get_contents('php://input'), true);
 // Check if data is valid
 if (!$data || !isset($data['id']) || !isset($data['name']) || !isset($data['team']) || !isset($data['points']) || !isset($data['position'])) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'error' => 'Invalid request data']);
+    echo json_encode(['success' => false, 'error' => 'Dati della richiesta non validi']);
     exit();
 }
 
 // Check for authorization token
 $headers = getallheaders();
 $auth_header = isset($headers['Authorization']) ? $headers['Authorization'] : '';
-/*
+
 if (empty($auth_header) || !preg_match('/Bearer\s+(\S+)/', $auth_header, $matches)) {
     http_response_code(401);
-    echo json_encode(['success' => false, 'error' => 'Unauthorized']);
+    echo json_encode(['success' => false, 'error' => 'Non autorizzato']);
     exit();
 }
-*/  
 
-//$token = $matches[1];
+$token = $matches[1];
 
 // In a real application, you would validate the token against a database
 // For this example, we'll just check if it's not empty
-/*if (empty($token)) {
+if (empty($token)) {
     http_response_code(401);
-    echo json_encode(['success' => false, 'error' => 'Invalid token']);
+    echo json_encode(['success' => false, 'error' => 'Token non valido']);
     exit();
 }
-*/
+
 // Include database connection
 include_once '../config/config.php';
 
@@ -55,48 +54,51 @@ try {
     // Create database instance and get connection
     $database = new Database();
     $conn = $database->getConnection();
-
+    
     // Sanitize inputs
-    $id = isset($data['id']) ? (int)$data['id'] : 0;
+    $id = intval($data['id']);
     $name = htmlspecialchars(trim($data['name']));
     $team = htmlspecialchars(trim($data['team']));
-    $points = (float)$data['points'];
-    $position = (int)$data['position'];
-    $image_url = isset($data['imageUrl']) ? htmlspecialchars(trim($data['imageUrl'])) : '';
-
-    // Check if we're updating an existing record or creating a new one
-    if (isset($data['id']) && $data['id'] > 0) {
-        // Update existing driver
-        $sql = "UPDATE drivers SET name = :name, team = :team, points = :points, position = :position, image_url = :image_url WHERE id = :id";
-        $stmt = $conn->prepare($sql);
-        $stmt->bindParam(':id', $data['id'], PDO::PARAM_INT);
-    } else {
-        // Insert new driver
-        $sql = "INSERT INTO drivers (name, team, points, position, image_url) VALUES (:name, :team, :points, :position, :image_url)";
-        $stmt = $conn->prepare($sql);
+    $points = floatval($data['points']);
+    $position = intval($data['position']);
+    $country = isset($data['country']) ? htmlspecialchars(trim($data['country'])) : '';
+    $image_url = isset($data['image_url']) ? htmlspecialchars(trim($data['image_url'])) : '';
+    
+    // Check if the driver exists
+    $check_sql = "SELECT id FROM drivers WHERE id = :id";
+    $check_stmt = $conn->prepare($check_sql);
+    $check_stmt->bindParam(':id', $id, PDO::PARAM_INT);
+    $check_stmt->execute();
+    
+    if ($check_stmt->rowCount() === 0) {
+        http_response_code(404);
+        echo json_encode(['success' => false, 'error' => 'Pilota non trovato']);
+        exit();
     }
-
+    
+    // Update the driver
+    $sql = "UPDATE drivers SET name = :name, team = :team, points = :points, position = :position, country = :country, image_url = :image_url WHERE id = :id";
+    $stmt = $conn->prepare($sql);
+    
     // Bind parameters
+    $stmt->bindParam(':id', $id, PDO::PARAM_INT);
     $stmt->bindParam(':name', $name);
     $stmt->bindParam(':team', $team);
     $stmt->bindParam(':points', $points);
     $stmt->bindParam(':position', $position);
+    $stmt->bindParam(':country', $country);
     $stmt->bindParam(':image_url', $image_url);
-
+    
     // Execute the query
     if ($stmt->execute()) {
-        // Get the ID of the inserted/updated driver
-        $driver_id = isset($data['id']) ? $data['id'] : $conn->lastInsertId();
-
-        http_response_code(200);
         // Return success response
         echo json_encode([
-            'success' => true,
-            'message' => 'Driver ' . (isset($data['id']) ? 'updated' : 'added') . ' successfully',
-            'id' => $driver_id
+            'success' => true, 
+            'message' => 'Pilota aggiornato con successo',
+            'id' => $id
         ]);
     } else {
-        throw new PDOException("Failed to " . (isset($data['id']) ? 'update' : 'add') . " driver");
+        throw new PDOException("Impossibile aggiornare il pilota");
     }
 } catch (PDOException $e) {
     http_response_code(500);
