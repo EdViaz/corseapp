@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import '../services/preferences_service.dart';
 import 'admin_screen.dart';
 
@@ -66,7 +69,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildSectionTitle('Gestione Dati'),
           _buildResetButton(),
           const Divider(),
-          
+
           _buildSectionTitle('Amministrazione'),
           _buildAdminButton(),
         ],
@@ -245,8 +248,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     );
   }
-  
+
   Widget _buildAdminButton() {
+    TextEditingController _usernameController = TextEditingController();
+    TextEditingController _passwordController = TextEditingController();
+
     return Card(
       elevation: 2,
       child: ListTile(
@@ -254,49 +260,80 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title: const Text('Accesso Amministratore'),
         subtitle: const Text('Gestisci piloti, team e notizie'),
         onTap: () {
-          // Mostra dialogo di login
           showDialog(
             context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Login Amministratore'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    decoration: const InputDecoration(
-                      labelText: 'Username',
-                      border: OutlineInputBorder(),
-                    ),
+            builder:
+                (context) => AlertDialog(
+                  title: const Text('Login Amministratore'),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        controller: _usernameController,
+                        decoration: const InputDecoration(
+                          labelText: 'Username',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _passwordController,
+                        obscureText: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Password',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Password',
-                      border: OutlineInputBorder(),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Annulla'),
                     ),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Annulla'),
+                    TextButton(
+                      onPressed: () async {
+                        final username = _usernameController.text.trim();
+                        final password = _passwordController.text.trim();
+
+                        // Effettua la richiesta al backend
+                        final response = await http.post(
+                          Uri.parse('http://localhost/backend/api/admin_login.php'),
+                          body: jsonEncode({
+                            'username': username,
+                            'password': password,
+                          }),
+                          headers: {'Content-Type': 'application/json'},
+                        );
+
+                        if (response.statusCode == 200) {
+                          final data = jsonDecode(response.body);
+                          if (data['success']) {
+                            Navigator.pop(context); // Chiudi il dialogo PRIMA
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const AdminScreen(),
+                              ),
+                            );
+                            return;
+                          }
+                        }
+
+                        // Autenticazione fallita, mostra un messaggio di errore
+                        Navigator.pop(context); // Chiudi il dialogo
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Autenticazione fallita. Controlla le credenziali.',
+                            ),
+                          ),
+                        );
+                      },
+                      child: const Text('Accedi'),
+                    ),
+                  ],
                 ),
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    // Per semplicità, non implementiamo una vera autenticazione
-                    // ma passiamo direttamente alla schermata di amministrazione
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const AdminScreen()),
-                    );
-                  },
-                  child: const Text('Accedi'),
-                ),
-              ],
-            ),
           );
         },
       ),

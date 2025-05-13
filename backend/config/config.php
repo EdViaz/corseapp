@@ -5,19 +5,22 @@ class Database {
     private $username = 'root';
     private $password = '';
     private $conn;
+    private $options = [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_EMULATE_PREPARES => false,
+        PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8"
+    ];
 
     public function getConnection() {
         $this->conn = null;
 
         try {
-            $this->conn = new mysqli($this->host, $this->username, $this->password, $this->database);
-            $this->conn->set_charset("utf8");
-            
-            if ($this->conn->connect_error) {
-                throw new Exception("Connection failed: " . $this->conn->connect_error);
-            }
-        } catch(Exception $e) {
-            echo "Database connection error: " . $e->getMessage();
+            $dsn = "mysql:host={$this->host};dbname={$this->database};charset=utf8";
+            $this->conn = new PDO($dsn, $this->username, $this->password, $this->options);
+        } catch(PDOException $e) {
+            echo json_encode(["error" => "Database connection error: " . $e->getMessage()]);
+            exit;
         }
 
         return $this->conn;

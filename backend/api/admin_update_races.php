@@ -21,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $data = json_decode(file_get_contents('php://input'), true);
 
 // Check if data is valid
-if (!$data || !isset($data['title']) || !isset($data['content'])) {
+if (!$data || !isset($data['name']) || !isset($data['circuit']) || !isset($data['date']) || !isset($data['country'])) {
     http_response_code(400);
     echo json_encode(['success' => false, 'error' => 'Invalid request data']);
     exit();
@@ -56,43 +56,44 @@ try {
     $conn = $database->getConnection();
     
     // Sanitize inputs
-    $title = htmlspecialchars(trim($data['title']));
-    $content = htmlspecialchars(trim($data['content']));
-    $image_url = isset($data['image_url']) ? htmlspecialchars(trim($data['image_url'])) : '';
-    $publish_date = isset($data['publish_date']) ? $data['publish_date'] : date('Y-m-d H:i:s'); // Use provided date or current date
-    $additional_images = isset($data['additional_images']) ? json_encode($data['additional_images']) : null;
+    $name = htmlspecialchars(trim($data['name']));
+    $circuit = htmlspecialchars(trim($data['circuit']));
+    $date = $data['date']; // Should be in YYYY-MM-DD format
+    $country = htmlspecialchars(trim($data['country']));
+    $flag_url = isset($data['flag_url']) ? htmlspecialchars(trim($data['flag_url'])) : '';
     
     // Check if we're updating an existing record or creating a new one
     if (isset($data['id']) && $data['id'] > 0) {
-        // Update existing news
-        $sql = "UPDATE news SET title = :title, content = :content, image_url = :image_url, publish_date = :publish_date WHERE id = :id";
+        // Update existing race
+        $sql = "UPDATE races SET name = :name, circuit = :circuit, date = :date, country = :country, flag_url = :flag_url WHERE id = :id";
         $stmt = $conn->prepare($sql);
         $stmt->bindParam(':id', $data['id'], PDO::PARAM_INT);
     } else {
-        // Insert new news
-        $sql = "INSERT INTO news (title, content, image_url, publish_date) VALUES (:title, :content, :image_url, :publish_date)";
+        // Insert new race
+        $sql = "INSERT INTO races (name, circuit, date, country, flag_url) VALUES (:name, :circuit, :date, :country, :flag_url)";
         $stmt = $conn->prepare($sql);
     }
     
     // Bind parameters
-    $stmt->bindParam(':title', $title);
-    $stmt->bindParam(':content', $content);
-    $stmt->bindParam(':image_url', $image_url);
-    $stmt->bindParam(':publish_date', $publish_date);
+    $stmt->bindParam(':name', $name);
+    $stmt->bindParam(':circuit', $circuit);
+    $stmt->bindParam(':date', $date);
+    $stmt->bindParam(':country', $country);
+    $stmt->bindParam(':flag_url', $flag_url);
     
     // Execute the query
     if ($stmt->execute()) {
-        // Get the ID of the inserted/updated news
-        $news_id = isset($data['id']) ? $data['id'] : $conn->lastInsertId();
+        // Get the ID of the inserted/updated race
+        $race_id = isset($data['id']) ? $data['id'] : $conn->lastInsertId();
         
         // Return success response
         echo json_encode([
             'success' => true, 
-            'message' => 'News ' . (isset($data['id']) ? 'updated' : 'added') . ' successfully',
-            'id' => $news_id
+            'message' => 'Race ' . (isset($data['id']) ? 'updated' : 'added') . ' successfully',
+            'id' => $race_id
         ]);
     } else {
-        throw new PDOException("Failed to add news");
+        throw new PDOException("Failed to " . (isset($data['id']) ? 'update' : 'add') . " race");
     }
 } catch (PDOException $e) {
     http_response_code(500);

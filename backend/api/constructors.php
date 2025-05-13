@@ -11,37 +11,16 @@ try {
     $database = new Database();
     $conn = $database->getConnection();
 
-    // Check connection
-    if ($conn->connect_error) {
-        throw new Exception("Connection failed: " . $conn->connect_error);
-    }
-
-    // Query to get constructor standings
+    // Query to get constructor standings using prepared statement
     $sql = "SELECT * FROM constructors ORDER BY position ASC";
-    $result = $conn->query($sql);
-
-    if ($result === false) {
-        throw new Exception("Error executing query: " . $conn->error);
-    }
-
-    $constructors = array();
+    $stmt = $conn->prepare($sql);
+    $stmt->execute();
     
-    if ($result->num_rows > 0) {
-        while($row = $result->fetch_assoc()) {
-            $constructors[] = $row;
-        }
-    }
+    $constructors = $stmt->fetchAll();
     
     // Return JSON response
     echo json_encode($constructors);
-    
-} catch (Exception $e) {
+} catch (PDOException $e) {
     // Return error as JSON
-    echo json_encode(array('error' => $e->getMessage()));
-} finally {
-    // Close connection if it exists
-    if (isset($conn)) {
-        $conn->close();
-    }
+    echo json_encode(['error' => $e->getMessage()]);
 }
-?>

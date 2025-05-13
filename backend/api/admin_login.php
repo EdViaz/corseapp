@@ -38,27 +38,35 @@ if (!$data || !isset($data['username']) || !isset($data['password'])) {
 $username = htmlspecialchars(trim($data['username']));
 $password = trim($data['password']);
 
-// In a real application, you would validate against a database
-// For this example, we'll use hardcoded credentials
-$valid_username = 'admin';
-$valid_password = 'password123'; // In production, use hashed passwords
+// Include database connection
+include_once '../config/config.php';
 
-if (hash_equals($valid_username, $username) && hash_equals($valid_password, $password)) {
-    try {
-        // Generate a secure token
+try {
+    $database = new Database();
+    $conn = $database->getConnection();
+
+    // Recupera l'utente dal database
+    $stmt = $conn->prepare("SELECT id, username, password FROM admin WHERE username = :username LIMIT 1");
+    $stmt->bindParam(':username', $username);
+    $stmt->execute();
+    $admin = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($admin && password_verify($password, $admin['password'])) {
+        // Genera un token sicuro
         $token = bin2hex(random_bytes(32));
-
+        // In una vera app, salva il token nel db
+        http_response_code(200);
+        // Restituisci il token al clien
         echo json_encode([
             'success' => true,
             'message' => 'Login successful',
-            'token' => $token,
-            'username' => $username
+            'token' => $token
         ]);
-    } catch (Exception $e) {
-        http_response_code(500);
-        echo json_encode(['success' => false, 'error' => 'Internal server error']);
+    } else {
+        http_response_code(401);
+        echo json_encode(['success' => false, 'error' => 'Invalid credentials']);
     }
-} else {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'error' => 'Invalid credentials']);
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode(['success' => false, 'error' => 'Server error']);
 }

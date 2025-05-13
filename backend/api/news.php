@@ -11,35 +11,16 @@ try {
     $database = new Database();
     $conn = $database->getConnection();
 
-    // Check connection
-    if ($conn->connect_error) {
-        throw new Exception("Connection failed: " . $conn->connect_error);
-    }
-
-    // Query to get news
+    // Query to get news using prepared statement
     $sql = "SELECT * FROM news ORDER BY publish_date DESC";
-    $result = $conn->query($sql);
-
-    if ($result === false) {
-        throw new Exception("Error executing query: " . $conn->error);
-    }
-
-    $news = array();
-
-    if ($result->num_rows > 0) {
-        while ($row = $result->fetch_assoc()) {
-            $news[] = $row;
-        }
-    }
-
+    $stmt = $conn->prepare($sql);
+    $stmt->execute();
+    
+    $news = $stmt->fetchAll();
+    
     // Return JSON response
     echo json_encode($news);
-} catch (Exception $e) {
+} catch (PDOException $e) {
     // Return error as JSON
-    echo json_encode(array('error' => $e->getMessage()));
-} finally {
-    // Close connection if it exists
-    if (isset($conn)) {
-        $conn->close();
-    }
+    echo json_encode(['error' => $e->getMessage()]);
 }
