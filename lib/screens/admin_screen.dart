@@ -16,7 +16,7 @@ class _AdminScreenState extends State<AdminScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final ApiService _apiService = ApiService();
-  final String baseUrl = 'http://localhost/backend/api';
+  final String baseUrl = 'http://localhost:80/api';
 
   // Token di autorizzazione per le chiamate API admin
   final String authToken =

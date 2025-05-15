@@ -298,7 +298,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                         // Effettua la richiesta al backend
                         final response = await http.post(
-                          Uri.parse('http://localhost/backend/api/admin_login.php'),
+                          Uri.parse('http://localhost:80/api/admin_login.php'),
                           body: jsonEncode({
                             'username': username,
                             'password': password,

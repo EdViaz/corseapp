@@ -4,7 +4,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_models.dart';
 
 class AuthService {
-  final String baseUrl = 'http://localhost/backend/api';
+
+  //per far funzionare docker
+
+  final String baseUrl = 'http://localhost:80/api';
   final bool debugMode = true;
 
   // Chiave per memorizzare l'utente nelle SharedPreferences
@@ -15,10 +18,7 @@ class AuthService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/register.php'),
-        body: {
-          'username': username,
-          'password': password,
-        },
+        body: {'username': username, 'password': password},
       );
 
       if (debugMode) {
@@ -36,7 +36,9 @@ class AuthService {
           throw Exception(data['message'] ?? 'Registrazione fallita');
         }
       } else {
-        throw Exception('Errore durante la registrazione: ${response.statusCode}');
+        throw Exception(
+          'Errore durante la registrazione: ${response.statusCode}',
+        );
       }
     } catch (e) {
       throw Exception('Errore di rete: ${e.toString()}');
@@ -48,10 +50,7 @@ class AuthService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/login.php'),
-        body: {
-          'username': username,
-          'password': password,
-        },
+        body: {'username': username, 'password': password},
       );
 
       if (debugMode) {
@@ -114,7 +113,9 @@ class AuthService {
         List<dynamic> data = json.decode(response.body);
         return data.map((json) => Comment.fromJson(json)).toList();
       } else {
-        throw Exception('Impossibile caricare i commenti: ${response.statusCode}');
+        throw Exception(
+          'Impossibile caricare i commenti: ${response.statusCode}',
+        );
       }
     } catch (e) {
       throw Exception('Errore di rete: ${e.toString()}');
@@ -149,10 +150,14 @@ class AuthService {
         if (data['success'] == true) {
           return Comment.fromJson(data['comment']);
         } else {
-          throw Exception(data['message'] ?? 'Impossibile aggiungere il commento');
+          throw Exception(
+            data['message'] ?? 'Impossibile aggiungere il commento',
+          );
         }
       } else {
-        throw Exception('Errore durante l\'aggiunta del commento: ${response.statusCode}');
+        throw Exception(
+          'Errore durante l\'aggiunta del commento: ${response.statusCode}',
+        );
       }
     } catch (e) {
       throw Exception('Errore di rete: ${e.toString()}');

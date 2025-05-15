@@ -1,9 +1,9 @@
 <?php
 class Database {
-    private $host = 'localhost';
-    private $database = 'f1_db';
-    private $username = 'root';
-    private $password = '';
+    private $host;
+    private $database;
+    private $username;
+    private $password;
     private $conn;
     private $options = [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
@@ -11,6 +11,13 @@ class Database {
         PDO::ATTR_EMULATE_PREPARES => false,
         PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8"
     ];
+    
+    public function __construct() {
+        $this->host = getenv('MYSQL_HOST') ?: 'localhost:3306';
+        $this->database = getenv('MYSQL_DATABASE') ?: 'f1_db';
+        $this->username = getenv('MYSQL_USER') ?: 'root';
+        $this->password = getenv('MYSQL_PASSWORD') ?: '';
+    }
 
     public function getConnection() {
         $this->conn = null;

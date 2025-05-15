@@ -3,6 +3,7 @@ import 'news_screen.dart';
 import 'standings_screen.dart';
 import 'races_screen.dart';
 import 'settings_screen.dart';
+import 'user_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -18,6 +19,7 @@ class _HomeScreenState extends State<HomeScreen> {
     const NewsScreen(),
     const StandingsScreen(),
     const RacesScreen(),
+    const UserScreen()
   ];
 
   void _onItemTapped(int index) {
@@ -56,6 +58,10 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icon(Icons.calendar_today),
             label: 'Races',
           ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'User',
+          )
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.red,
@@ -64,3 +70,5 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
+
+

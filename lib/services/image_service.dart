@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 
 class ImageService {
   // Base URL for the PHP API
-  static final String baseUrl = 'http://localhost/backend/api';
+  static final String baseUrl = 'http://localhost:80/api';
 
   // Tipi di media supportati
   static const String TYPE_IMAGE = 'image';

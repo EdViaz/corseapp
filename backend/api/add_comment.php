@@ -3,16 +3,13 @@ header('Access-Control-Allow-Origin: *');
 header('Content-Type: application/json; charset=UTF-8');
 
 // Connessione al database
-$host = 'localhost';
-$db_name = 'f1_db';
-$username = 'root';
-$password = '';
+include_once '../config/config.php';
 
 try {
-    $conn = new PDO("mysql:host=$host;dbname=$db_name", $username, $password);
-    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch(PDOException $e) {
-    echo json_encode(["success" => false, "message" => "Errore di connessione: " . $e->getMessage()]);
+    $database = new Database();
+    $conn = $database->getConnection();
+} catch (PDOException $e) {
+    echo json_encode(["success" => false, "message" => "Errore di connessione al database: " . $e->getMessage()]);
     exit;
 }
 
@@ -57,15 +54,15 @@ if ($stmt->rowCount() === 0) {
 // Inserisci il commento
 try {
     $current_date = date('Y-m-d H:i:s');
-    
+
     $stmt = $conn->prepare("INSERT INTO comments (news_id, user_id, content, date) VALUES (?, ?, ?, ?)");
     $stmt->execute([$news_id, $user_id, $content, $current_date]);
-    
+
     $comment_id = $conn->lastInsertId();
-    
+
     // Restituisci i dati del commento
     echo json_encode([
-        "success" => true, 
+        "success" => true,
         "message" => "Commento aggiunto con successo",
         "comment" => [
             "id" => $comment_id,
@@ -76,7 +73,6 @@ try {
             "date" => $current_date
         ]
     ]);
-} catch(PDOException $e) {
+} catch (PDOException $e) {
     echo json_encode(["success" => false, "message" => "Errore durante l'aggiunta del commento: " . $e->getMessage()]);
 }
-?>

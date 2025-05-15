@@ -3,6 +3,10 @@ import '../models/f1_models.dart';
 import '../services/api_service.dart';
 import '../services/image_service.dart';
 
+// Schermata che mostra il calendario delle gare di Formula 1
+// Divisa in due tab: gare future e gare passate
+// Visualizza informazioni dettagliate su ogni gara con immagini dei circuiti
+
 class RacesScreen extends StatefulWidget {
   const RacesScreen({super.key});
 
@@ -11,14 +15,19 @@ class RacesScreen extends StatefulWidget {
 }
 
 class _RacesScreenState extends State<RacesScreen> with SingleTickerProviderStateMixin {
+  // Servizio per le chiamate API
   final ApiService _apiService = ApiService();
+  // Future per i dati delle gare
   late Future<List<Race>> _racesFuture;
+  // Controller per gestire le tab (Gare future e Gare passate)
   late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
+    // Inizializza il controller con 2 tab (Gare future e Gare passate)
     _tabController = TabController(length: 2, vsync: this);
+    // Carica i dati delle gare all'avvio della schermata
     _racesFuture = _apiService.getRaces();
   }
 
@@ -31,6 +40,7 @@ class _RacesScreenState extends State<RacesScreen> with SingleTickerProviderStat
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // AppBar con TabBar per navigare tra gare future e passate
       appBar: AppBar(
         backgroundColor: Colors.red,
         bottom: TabBar(

@@ -3,12 +3,14 @@ import 'package:http/http.dart' as http;
 import '../models/f1_models.dart';
 import '../models/driver_details.dart';
 import '../services/preferences_service.dart';
+import '../models/user_models.dart';
 
 class ApiService {
   // Base URL for the PHP API
   // For web browser testing, we need to use the correct URL format
 
-  final String baseUrl = 'http://localhost/backend/api';
+  //per far funzionare docker
+  final String baseUrl = 'http://localhost:80/api';
 
   //final String baseUrl = 'http://192.168.0.30/backend/api';
 
@@ -102,6 +104,39 @@ class ApiService {
       }
     } catch (e) {
       throw Exception('Network error: ${e.toString()}');
+    }
+  }
+
+  // Recupera i commenti di un utente specifico
+  Future<List<Comment>> getUserComments(int userId) async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/user_comments.php?user_id=$userId'));
+
+      if (debugMode) {
+        print('User Comments API Response Status: ${response.statusCode}');
+        print('User Comments API Response Body: ${response.body}');
+      }
+
+      if (response.statusCode == 200) {
+        try {
+          if (response.body.isEmpty) {
+            return []; // Restituisce una lista vuota se non ci sono commenti
+          }
+
+          List<dynamic> data = json.decode(response.body);
+          return data.map((json) => Comment.fromJson(json)).toList();
+        } catch (e) {
+          throw Exception(
+            'Risposta JSON non valida: ${e.toString()}\nCorpo della risposta: ${response.body.length > 200 ? response.body.substring(0, 200) + '...' : response.body}',
+          );
+        }
+      } else {
+        throw Exception(
+          'Impossibile caricare i commenti dell\'utente: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Errore di rete: ${e.toString()}');
     }
   }
 
@@ -240,8 +275,6 @@ class ApiService {
             'teammateRaceWins': 6,
             'teammatePoints': 120,
           };
-
-      
 
           driverData['media_gallery'] = [
             'https://www.formula1.com/content/dam/fom-website/drivers/2023Drivers/leclerc.jpg.img.1920.medium.jpg',

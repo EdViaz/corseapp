@@ -3,6 +3,10 @@ import '../models/f1_models.dart';
 import '../services/api_service.dart';
 import './news_detail_screen.dart'; // Importa la nuova schermata
 
+// Schermata che mostra le ultime notizie di Formula 1
+// Visualizza un elenco di notizie con titolo e immagine
+// Permette di accedere ai dettagli completi di ogni notizia
+
 class NewsScreen extends StatefulWidget {
   const NewsScreen({super.key});
 
@@ -11,12 +15,15 @@ class NewsScreen extends StatefulWidget {
 }
 
 class _NewsScreenState extends State<NewsScreen> {
+  // Servizio per le chiamate API
   final ApiService _apiService = ApiService();
+  // Future per i dati delle notizie
   late Future<List<News>> _newsFuture;
 
   @override
   void initState() {
     super.initState();
+    // Carica le notizie all'avvio della schermata
     _newsFuture = _apiService.getNews();
   }
 
@@ -24,21 +31,31 @@ class _NewsScreenState extends State<NewsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
 
+      // Corpo della schermata che mostra l'elenco delle notizie
       body: FutureBuilder<List<News>>(
         future: _newsFuture,
         builder: (context, snapshot) {
+          // Mostra indicatore di caricamento mentre i dati vengono recuperati
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
+          } 
+          // Gestisce eventuali errori durante il recupero dei dati
+          else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          } 
+          // Gestisce il caso in cui non ci siano notizie disponibili
+          else if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return const Center(child: Text('No news available'));
-          } else {
+          } 
+          // Costruisce la lista delle notizie quando i dati sono disponibili
+          else {
             return ListView.builder(
               itemCount: snapshot.data!.length,
               itemBuilder: (context, index) {
                 final news = snapshot.data![index];
+                // Card cliccabile per ogni notizia
                 return GestureDetector(
+                  // Naviga alla schermata di dettaglio quando si tocca una notizia
                   onTap: () {
                     Navigator.push(
                       context,

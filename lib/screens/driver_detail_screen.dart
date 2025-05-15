@@ -3,6 +3,10 @@ import '../models/driver_details.dart';
 import '../services/api_service.dart';
 import '../services/image_service.dart';
 
+// Schermata che mostra i dettagli completi di un pilota di Formula 1
+// Visualizza informazioni personali, statistiche e contenuti multimediali
+// organizzati in diverse tab per una migliore esperienza utente
+
 class DriverDetailScreen extends StatefulWidget {
   final int driverId;
 
@@ -15,21 +19,31 @@ class DriverDetailScreen extends StatefulWidget {
 
 class _DriverDetailScreenState extends State<DriverDetailScreen>
     with SingleTickerProviderStateMixin {
+  // Controller per gestire le tab (Profilo, Statistiche, Media)
   late TabController _tabController;
+  // Future per i dati dettagliati del pilota
   late Future<DriverDetails> _driverDetailsFuture;
+  // Servizio per le chiamate API
   final ApiService _apiService = ApiService();
+  // Stato per la modalità scura/chiara
   bool _isDarkMode = false;
+  // Stato per indicare se il pilota è tra i preferiti
   bool _isFavorite = false;
 
   @override
   void initState() {
     super.initState();
+    // Inizializza il controller con 3 tab (Profilo, Statistiche, Media)
     _tabController = TabController(length: 3, vsync: this);
+    // Carica i dettagli del pilota all'avvio della schermata
     _loadDriverDetails();
   }
 
+  // Carica i dettagli del pilota dal servizio API
   void _loadDriverDetails() {
+    // Richiede i dettagli del pilota usando l'ID fornito
     _driverDetailsFuture = _apiService.getDriverDetails(widget.driverId);
+    // Aggiorna lo stato dei preferiti quando i dati sono disponibili
     _driverDetailsFuture.then((details) {
       setState(() {
         _isFavorite = details.isFavorite;
@@ -43,17 +57,20 @@ class _DriverDetailScreenState extends State<DriverDetailScreen>
     super.dispose();
   }
 
+  // Cambia tra tema chiaro e scuro
   void _toggleTheme() {
     setState(() {
       _isDarkMode = !_isDarkMode;
     });
   }
 
+  // Aggiunge o rimuove il pilota dai preferiti
   void _toggleFavorite() {
     setState(() {
       _isFavorite = !_isFavorite;
     });
     // Qui si potrebbe implementare la logica per salvare i preferiti
+    // TODO: Implementare la persistenza dei preferiti utilizzando SharedPreferences
   }
 
   @override
@@ -121,9 +138,7 @@ class _DriverDetailScreenState extends State<DriverDetailScreen>
         children: [
           CircleAvatar(
             radius: 40,
-            backgroundImage: NetworkImage(
-              ImageService.getProxyImageUrl(driver.imageUrl, width: 200),
-            ),
+            backgroundImage: NetworkImage(driver.imageUrl),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -131,7 +146,7 @@ class _DriverDetailScreenState extends State<DriverDetailScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  driver.name +" " + driver.surname,
+                  "${driver.name} ${driver.surname}",
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
