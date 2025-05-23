@@ -1,1 +1,0 @@
-//TODO: schermata dettagli costruttori

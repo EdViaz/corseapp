@@ -26,6 +26,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   List<Driver> _allDrivers = [];
   List<Comment> _userComments = [];
   List<News> _allNews = []; // Aggiunto per tenere traccia di tutte le news
+  List<Constructor> _constructors = [];
   
   @override
   void initState() {
@@ -39,47 +40,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _isLoading = true;
       });
     }
-    
     try {
-      // Verifica se l'utente è loggato
       final user = await _authService.getCurrentUser();
-      
-      // Carica tutti i piloti
       final drivers = await _apiService.getDriverStandings();
-      
-      // Ottieni gli ID dei piloti preferiti
+      final constructors = await _apiService.getConstructorStandings();
       final favoriteIds = await _preferencesService.getFavoriteDrivers();
-      
-      // Filtra i piloti preferiti
       final favorites = drivers.where((driver) => favoriteIds.contains(driver.id)).toList();
-      
-      // Carica i commenti dell'utente
       List<Comment> comments = [];
       if (user != null) {
         try {
           comments = await _apiService.getUserComments(user.id);
-        } catch (e) {
-          print('Errore nel caricamento dei commenti: ${e.toString()}');
-          // Non blocchiamo il caricamento degli altri dati se i commenti falliscono
-        }
+        } catch (e) {}
       }
-      
-      // Carica tutte le news
       List<News> news = [];
       try {
         news = await _apiService.getNews();
-      } catch (e) {
-        print('Errore nel caricamento delle news: \\${e.toString()}');
-        // Anche in questo caso, non blocchiamo il caricamento degli altri dati
-      }
-      
+      } catch (e) {}
       if (mounted) {
         setState(() {
           _currentUser = user;
           _allDrivers = drivers;
           _favoriteDrivers = favorites;
           _userComments = comments;
-          _allNews = news; // Aggiorna la lista delle news
+          _allNews = news;
+          _constructors = constructors;
           _isLoading = false;
         });
       }
@@ -136,6 +120,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profilo Utente'),
+        titleTextStyle: const TextStyle(color: Colors.white),
         backgroundColor: Colors.red,
       ),
       body: RefreshIndicator(
@@ -290,7 +275,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             onBackgroundImageError: (_, __) => const Icon(Icons.error),
                           ),
                           title: Text('${driver.name} ${driver.surname}'),
-                          subtitle: Text(driver.team),
+                          subtitle: Text(_constructors.firstWhere(
+                            (c) => c.id == driver.teamId,
+                            orElse: () => Constructor(id: 0, name: '-', points: 0, logoUrl: '', position: 0),
+                          ).name),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -471,7 +459,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       onBackgroundImageError: (_, __) => const Icon(Icons.error),
                     ),
                     title: Text('${driver.name} ${driver.surname}'),
-                    subtitle: Text(driver.team),
+                    subtitle: Text(_constructors.firstWhere(
+                      (c) => c.id == driver.teamId,
+                      orElse: () => Constructor(id: 0, name: '-', points: 0, logoUrl: '', position: 0),
+                    ).name),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [

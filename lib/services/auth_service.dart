@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:corseapp/services/config.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_models.dart';
@@ -7,7 +8,7 @@ class AuthService {
 
   //per far funzionare docker
 
-  final String baseUrl = 'http://localhost:80/api';
+  final String baseUrl = url;
   final bool debugMode = true;
 
   // Chiave per memorizzare l'utente nelle SharedPreferences

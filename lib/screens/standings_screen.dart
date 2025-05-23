@@ -56,11 +56,10 @@ class _StandingsScreenState extends State<StandingsScreen>
     return Scaffold(
       // AppBar con titolo e TabBar per navigare tra le classifiche
       appBar: AppBar(
-        title: const Text('F1 Standings'),
         backgroundColor: Colors.red,
         bottom: TabBar(
           controller: _tabController,
-          tabs: const [Tab(text: 'Drivers'), Tab(text: 'Constructors')],
+          tabs: const [Tab(text: 'Piloti'), Tab(text: 'Team')],
           indicatorColor: Colors.white,
           labelColor: Colors.white,
         ),
@@ -82,68 +81,76 @@ class _StandingsScreenState extends State<StandingsScreen>
                 }
                 // Gestisce eventuali errori durante il recupero dei dati
                 else if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
+                  return Center(child: Text('Errore: ${snapshot.error}'));
                 }
                 // Gestisce il caso in cui non ci siano dati disponibili
                 else if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return const Center(
-                    child: Text('No driver standings available'),
+                    child: Text('Non ci sono dati disponibili'),
                   );
                 }
                 // Costruisce la lista dei piloti quando i dati sono disponibili
                 else {
-                  return ListView.builder(
-                    itemCount: snapshot.data!.length,
-                    itemBuilder: (context, index) {
-                      final driver = snapshot.data![index];
-                      // Card per ogni pilota nella classifica
-                      return Card(
-                        margin: const EdgeInsets.symmetric(
-                          horizontal: 16.0,
-                          vertical: 8.0,
-                        ),
-                        // InkWell per rendere l'intera card cliccabile
-                        child: InkWell(
-                          // Naviga alla schermata di dettaglio quando si tocca un pilota
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (context) =>
-                                      DriverDetailScreen(driverId: driver.id),
-                              ),
-                            );
-                          },
-                          child: ListTile(
-                            leading: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Container(
-                                  width: 30,
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    '${driver.position}',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                    ),
+                  return FutureBuilder<List<Constructor>>(
+                    future: _constructorsFuture,
+                    builder: (context, teamSnapshot) {
+                      final constructors = teamSnapshot.data ?? [];
+                      return ListView.builder(
+                        itemCount: snapshot.data!.length,
+                        itemBuilder: (context, index) {
+                          final driver = snapshot.data![index];
+                          final team = constructors.firstWhere(
+                            (c) => c.id == driver.teamId,
+                            orElse: () => Constructor(id: 0, name: '-', points: 0, logoUrl: '', position: 0),
+                          );
+                          // Card per ogni pilota nella classifica
+                          return Card(
+                            margin: const EdgeInsets.symmetric(
+                              horizontal: 16.0,
+                              vertical: 8.0,
+                            ),
+                            // InkWell per rendere l'intera card cliccabile
+                            child: InkWell(
+                              // Naviga alla schermata di dettaglio quando si tocca un pilota
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => DriverDetailScreen(driverId: driver.id),
                                   ),
+                                );
+                              },
+                              child: ListTile(
+                                leading: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      width: 30,
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        '${driver.position}',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    CircleAvatar(
+                                      backgroundImage: NetworkImage(driver.imageUrl),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(width: 8),
-                                CircleAvatar(
-                                  backgroundImage: NetworkImage(driver.imageUrl),
+                                title: Text("${driver.name} ${driver.surname}"),
+                                subtitle: Text(team.name),
+                                trailing: Text(
+                                  '${driver.points} punti',
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
                                 ),
-                              ],
+                              ),
                             ),
-                            title: Text(driver.name + " " + driver.surname),
-                            subtitle: Text(driver.team),
-                            trailing: Text(
-                              '${driver.points} pts',
-                              style: const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ),
+                          );
+                        },
                       );
                     },
                   );
@@ -161,10 +168,10 @@ class _StandingsScreenState extends State<StandingsScreen>
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 } else if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
+                  return Center(child: Text('Errore: ${snapshot.error}'));
                 } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return const Center(
-                    child: Text('No constructor standings available'),
+                    child: Text('Non ci sono dati disponibili'),
                   );
                 } else {
                   return ListView.builder(
@@ -210,7 +217,7 @@ class _StandingsScreenState extends State<StandingsScreen>
                             ),
                             title: Text(constructor.name),
                             trailing: Text(
-                              '${constructor.points} pts',
+                              '${constructor.points} punti',
                               style: const TextStyle(fontWeight: FontWeight.bold),
                             ),
                           ),

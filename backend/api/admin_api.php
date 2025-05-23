@@ -188,43 +188,45 @@ function handleDrivers($conn, $action, $data)
     switch ($action) {
         case 'create':
         case 'update':
-            if (!isset($data['name']) || !isset($data['surname']) || !isset($data['team']) || !isset($data['points']) || !isset($data['position'])) {
+            if (!isset($data['name']) || !isset($data['surname']) || !isset($data['team_id']) || !isset($data['points']) || !isset($data['position'])) {
                 http_response_code(400);
-                echo json_encode(['success' => false, 'error' => 'Missing required fields for driver']);
+                echo json_encode(['success' => false, 'error' => 'Campi obbligatori mancanti per il pilota']);
                 exit();
             }
 
             // Sanitize inputs
             $name = htmlspecialchars(trim($data['name']));
             $surname = htmlspecialchars(trim($data['surname']));
-            $team = htmlspecialchars(trim($data['team']));
+            $team_id = intval($data['team_id']);
             $points = (float)$data['points'];
             $position = (int)$data['position'];
             $image_url = isset($data['image_url']) ? htmlspecialchars(trim($data['image_url'])) : '';
             $nationality = isset($data['nationality']) ? htmlspecialchars(trim($data['nationality'])) : '';
             $number = isset($data['number']) ? intval($data['number']) : 0;
+            $description = isset($data['description']) ? htmlspecialchars(trim($data['description'])) : '';
 
             // Check if we're updating an existing record or creating a new one
             if (isset($data['id']) && $data['id'] > 0) {
                 // Update existing driver
-                $sql = "UPDATE drivers SET name = :name,surname = :surname, team = :team, points = :points, position = :position, image_url = :image_url, nationality = :nationality, number = :number WHERE id = :id";
+                $sql = "UPDATE drivers SET name = :name, surname = :surname, team_id = :team_id, points = :points, position = :position, image_url = :image_url, nationality = :nationality, number = :number, description = :description WHERE id = :id";
                 $stmt = $conn->prepare($sql);
                 $stmt->bindParam(':id', $data['id'], PDO::PARAM_INT);
             } else {
                 // Insert new driver
-                $sql = "INSERT INTO drivers (name,surname, team, points, position, image_url, nationality, number) VALUES (:name,:surname, :team, :points, :position, :image_url, :nationality, :number)";
+                $sql = "INSERT INTO drivers (name, surname, team_id, points, position, image_url, nationality, number, description) VALUES (:name, :surname, :team_id, :points, :position, :image_url, :nationality, :number, :description)";
                 $stmt = $conn->prepare($sql);
             }
 
             // Bind parameters
             $stmt->bindParam(':name', $name);
             $stmt->bindParam(':surname', $surname);
-            $stmt->bindParam(':team', $team);
+            $stmt->bindParam(':team_id', $team_id);
             $stmt->bindParam(':points', $points);
             $stmt->bindParam(':position', $position);
             $stmt->bindParam(':image_url', $image_url);
             $stmt->bindParam(':nationality', $nationality);
             $stmt->bindParam(':number', $number);
+            $stmt->bindParam(':description', $description);
 
             // Execute the query
             if ($stmt->execute()) {
@@ -234,18 +236,18 @@ function handleDrivers($conn, $action, $data)
                 // Return success response
                 echo json_encode([
                     'success' => true,
-                    'message' => 'Driver ' . (isset($data['id']) ? 'updated' : 'added') . ' successfully',
+                    'message' => 'Pilota ' . (isset($data['id']) ? 'aggiornato' : 'aggiunto') . ' con successo',
                     'id' => $driver_id
                 ]);
             } else {
-                throw new PDOException("Failed to add driver");
+                throw new PDOException("Impossibile aggiungere il pilota");
             }
             break;
 
         case 'delete':
             if (!isset($data['id'])) {
                 http_response_code(400);
-                echo json_encode(['success' => false, 'error' => 'Missing ID for delete operation']);
+                echo json_encode(['success' => false, 'error' => 'ID mancante per l\'eliminazione']);
                 exit();
             }
 
@@ -260,7 +262,7 @@ function handleDrivers($conn, $action, $data)
 
             if ($check_stmt->rowCount() === 0) {
                 http_response_code(404);
-                echo json_encode(['success' => false, 'error' => 'Driver non trovato']);
+                echo json_encode(['success' => false, 'error' => 'Pilota non trovato']);
                 exit();
             }
 
@@ -274,16 +276,16 @@ function handleDrivers($conn, $action, $data)
                 // Return success response
                 echo json_encode([
                     'success' => true,
-                    'message' => 'Driver eliminato con successo'
+                    'message' => 'Pilota eliminato con successo'
                 ]);
             } else {
-                throw new PDOException("Impossibile eliminare il driver");
+                throw new PDOException("Impossibile eliminare il pilota");
             }
             break;
 
         default:
             http_response_code(400);
-            echo json_encode(['success' => false, 'error' => 'Invalid action for drivers']);
+            echo json_encode(['success' => false, 'error' => 'Azione non valida per i piloti']);
             exit();
     }
 }

@@ -1,43 +1,77 @@
-# F1 App
+# CorseApp - Funzionamento Tecnico e Utente
 
-A Flutter application for Formula 1 fans that displays news, driver and constructor standings, and race schedules.
+## Descrizione Generale
+CorseApp è un'applicazione Flutter per la gestione e la consultazione di notizie, classifiche, piloti, team e gare di Formula 1. L'app è pensata per appassionati e amministratori, con funzionalità sia pubbliche che riservate.
 
-## Features
+---
 
-- News section with latest F1 news
-- Driver standings
-- Constructor standings
-- Race calendar with upcoming and past races
+## Funzionamento Tecnico (Flutter + Backend PHP)
 
-## Setup Instructions
+### Architettura
+- **Frontend:** Flutter (Dart)
+- **Backend:** PHP (REST API)
+- **Database:** MySQL (tramite Docker)
 
-### Prerequisites
+### Struttura Principale
+- `/lib/screens/` - Schermate principali dell'app (Home, Classifiche, Dettaglio Pilota, Admin, ecc.)
+- `/lib/models/` - Modelli dati (Driver, Constructor, News, ecc.)
+- `/lib/services/` - Servizi per chiamate API, autenticazione, preferenze
+- `/backend/api/` - Endpoint PHP per tutte le operazioni CRUD
+- `/backend/database/` - Script SQL per la struttura e i dati iniziali
 
-- Flutter SDK
-- XAMPP (for PHP and MySQL)
-- Android Studio or VS Code
+### Flusso Dati
+1. **Lato utente:**
+   - L'app Flutter effettua richieste HTTP alle API PHP per ottenere dati (piloti, team, news, gare).
+   - I dati vengono mostrati tramite FutureBuilder e modelli Dart.
+   - L'utente può consultare classifiche, dettagli, biografie, news e aggiungere piloti ai preferiti.
+2. **Lato admin:**
+   - Accesso tramite login amministratore.
+   - Possibilità di aggiungere, modificare o eliminare piloti, team, news e gare.
+   - Le modifiche vengono inviate tramite POST alle API PHP, che aggiornano il database.
 
-### Backend Setup
+### Autenticazione
+- Gli utenti possono registrarsi e accedere per salvare preferiti e commenti.
+- Gli admin accedono tramite credenziali dedicate e ricevono un token per le operazioni protette.
 
-1. Start XAMPP and ensure Apache and MySQL services are running
-2. Open phpMyAdmin (http://localhost/phpmyadmin)
-3. Import the SQL file from `backend/database/f1_db.sql` to create the database and tables
-4. Copy the `backend` folder to your XAMPP htdocs directory (usually `C:\xampp\htdocs\f1_api`)
+### Localizzazione
+- Tutti i testi sono in italiano.
 
-### Flutter App Setup
+---
 
-1. Clone this repository
-2. Run `flutter pub get` to install dependencies
-3. Update the API base URL in `lib/services/api_service.dart` if needed
-   - For Android emulator: `http://10.0.2.2/f1_api`
-   - For physical device: `http://YOUR_COMPUTER_IP/f1_api`
-4. Run the app with `flutter run`
+## Funzionamento Utente
 
-## Project Structure
+### Utente Normale
+- **Home:** Visualizza le ultime notizie.
+- **Classifiche:** Consulta la classifica piloti e costruttori, accede ai dettagli di ogni pilota/team.
+- **Gare:** Visualizza calendario e risultati delle gare.
+- **Profilo:** Gestisce i piloti preferiti e i propri commenti.
 
-- `lib/models`: Data models for the app
-- `lib/screens`: UI screens for different sections
-- `lib/services`: API service for backend communication
-- `backend/api`: PHP API endpoints
-- `backend/config`: Database configuration
-- `backend/database`: SQL schema and sample data
+### Amministratore
+- **Pannello Admin:**
+  - Gestisce piloti (aggiunta, modifica, eliminazione, biografia, team, punti, ecc.)
+  - Gestisce team/costruttori.
+  - Gestisce news.
+  - Gestisce gare.
+
+---
+
+## Database
+- **Tabelle principali:** `drivers`, `constructors`, `news`, `races`, `comments`, `users`
+- **Relazioni:**
+  - `drivers.team_id` → `constructors.id`
+  - Commenti e preferiti collegati agli utenti
+
+
+
+---
+
+## Avvio rapido (sviluppo)
+1. Avvia il backend con Docker (`docker-compose up`)
+2. Avvia l'app Flutter (`flutter run`)
+3. Accedi come admin per gestire i dati oppure usa l'app come utente normale
+
+---
+
+## Note
+- Tutti i dati sono fittizi e aggiornabili da pannello admin.
+- L'app è pensata per essere responsive e usabile sia su mobile che desktop.

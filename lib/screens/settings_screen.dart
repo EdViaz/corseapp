@@ -23,6 +23,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Impostazioni'),
+        titleTextStyle: const TextStyle(color: Colors.white),
+
         backgroundColor: Colors.red,
       ),
       body: ListView(
@@ -147,7 +149,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('CorseApp', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            const Text(
+              'CorseApp',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
             const SizedBox(height: 8),
             const Text('Versione: 1.0.0'),
             const SizedBox(height: 8),

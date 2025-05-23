@@ -53,53 +53,42 @@ class Driver {
   final int id;
   final String name;
   final String surname;
-  final String team;
+  final int teamId; // Cambiato da team (String) a teamId (int)
   final int points;
   final String imageUrl;
   final int position;
   final int victories; // Numero di vittorie per gestire i casi di parità
   final String nationality;
   final int number;
+  final String description; // Nuovo campo per la biografia
 
   Driver({
     required this.id,
     required this.name,
     required this.surname,
-    required this.team,
+    required this.teamId,
     required this.points,
     required this.imageUrl,
     required this.position,
     this.victories = 0,
     this.nationality = '',
     this.number = 0,
+    this.description = '',
   });
 
   factory Driver.fromJson(Map<String, dynamic> json) {
     return Driver(
-      id:
-          json['id'] is int
-              ? json['id']
-              : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
       name: json['name'] ?? '',
       surname: json['surname'] ?? '',
-      team: json['team'] ?? '',
-      points:
-          json['points'] is int
-              ? json['points']
-              : int.tryParse(json['points']?.toString() ?? '0') ?? 0,
+      teamId: json['team_id'] is int ? json['team_id'] : int.tryParse(json['team_id']?.toString() ?? '0') ?? 0,
+      points: json['points'] is int ? json['points'] : int.tryParse(json['points']?.toString() ?? '0') ?? 0,
       imageUrl: json['image_url'] ?? '',
-      position:
-          json['position'] is int
-              ? json['position']
-              : int.tryParse(json['position']?.toString() ?? '0') ?? 0,
-      victories:
-          json['victories'] is int
-              ? json['victories']
-              : int.tryParse(json['victories']?.toString() ?? '0') ?? 0,
+      position: json['position'] is int ? json['position'] : int.tryParse(json['position']?.toString() ?? '0') ?? 0,
+      victories: json['victories'] is int ? json['victories'] : int.tryParse(json['victories']?.toString() ?? '0') ?? 0,
       nationality: json['nationality'] ?? '',
-      number: json['number'] is int
-          ? json['number']
-          : int.tryParse(json['number']?.toString() ?? '0') ?? 0,
+      number: json['number'] is int ? json['number'] : int.tryParse(json['number']?.toString() ?? '0') ?? 0,
+      description: json['description'] ?? '',
     );
   }
 }

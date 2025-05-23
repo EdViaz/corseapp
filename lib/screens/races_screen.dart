@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/f1_models.dart';
 import '../services/api_service.dart';
-import '../services/image_service.dart';
 import 'race_detail_screen.dart';
 
 // Schermata che mostra il calendario delle gare di Formula 1
@@ -54,8 +53,8 @@ class _RacesScreenState extends State<RacesScreen> with SingleTickerProviderStat
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
-            Tab(text: 'Upcoming Races'),
-            Tab(text: 'Past Races'),
+            Tab(text: 'Prossime'),
+            Tab(text: 'Passate'),
           ],
           indicatorColor: Colors.white,
           labelColor: Colors.white,
@@ -69,7 +68,7 @@ class _RacesScreenState extends State<RacesScreen> with SingleTickerProviderStat
           } else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('No races available'));
+            return const Center(child: Text('Non ci sono gare disponibili'));
           } else {
             final races = snapshot.data!;
             final upcomingRaces = races.where((race) => !race.isPast).toList();
@@ -100,7 +99,7 @@ class _RacesScreenState extends State<RacesScreen> with SingleTickerProviderStat
   Widget _buildRacesList(List<Race> races, {required bool isUpcoming}) {
     if (races.isEmpty) {
       return Center(
-        child: Text(isUpcoming ? 'No upcoming races' : 'No past races'),
+        child: Text(isUpcoming ? 'Nessuna gara futura disponibile' : 'Nessuna gara passata disponibile'),
       );
     }
     
@@ -115,10 +114,7 @@ class _RacesScreenState extends State<RacesScreen> with SingleTickerProviderStat
                 ? ClipRRect(
                     borderRadius: BorderRadius.circular(4),
                     child: Image.network(
-                      ImageService.getProxyImageUrl(
-                        race.flagUrl,
-                        width: 48,
-                      ),
+                      race.flagUrl,
                       width: 48,
                       height: 32,
                       fit: BoxFit.cover,

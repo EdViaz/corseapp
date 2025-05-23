@@ -3,7 +3,6 @@ import 'news_screen.dart';
 import 'standings_screen.dart';
 import 'races_screen.dart';
 import 'settings_screen.dart';
-import 'user_screen.dart';
 import 'profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -61,15 +60,15 @@ class _HomeScreenState extends State<HomeScreen> {
           BottomNavigationBarItem(icon: Icon(Icons.article), label: 'News'),
           BottomNavigationBarItem(
             icon: Icon(Icons.leaderboard),
-            label: 'Standings',
+            label: 'Classifica',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.calendar_today),
-            label: 'Races',
+            label: 'Gare',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
-            label: 'User',
+            label: 'Utente',
           )
         ],
         currentIndex: _selectedIndex,

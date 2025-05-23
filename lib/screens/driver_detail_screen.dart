@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../models/driver_details.dart';
 import '../models/f1_models.dart';
 import '../services/api_service.dart';
-import '../services/image_service.dart';
 import '../services/preferences_service.dart';
 
 // Schermata che mostra i dettagli completi di un pilota di Formula 1
@@ -126,49 +125,66 @@ class _DriverDetailScreenState extends State<DriverDetailScreen>
   }
 
   Widget _buildDriverHeader(DriverDetails driver) {
-    return Container(
-      padding: const EdgeInsets.all(16.0),
-      color: Colors.red,
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 40,
-            backgroundImage: NetworkImage(driver.imageUrl),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "${driver.name} ${driver.surname}",
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+    return FutureBuilder<List<Constructor>>(
+      future: ApiService().getConstructorStandings(),
+      builder: (context, snapshot) {
+        String teamName = '';
+        if (snapshot.hasData) {
+          final team = snapshot.data!.firstWhere(
+            (c) => c.id == driver.teamId,
+            orElse: () => Constructor(id: 0, name: '-', points: 0, logoUrl: '', position: 0),
+          );
+          teamName = team.name;
+        } else if (snapshot.connectionState == ConnectionState.waiting) {
+          teamName = 'Caricamento...';
+        } else {
+          teamName = '-';
+        }
+        return Container(
+          padding: const EdgeInsets.all(16.0),
+          color: Colors.red,
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 40,
+                backgroundImage: NetworkImage(driver.imageUrl),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "${driver.name} ${driver.surname}",
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    Text(
+                      teamName,
+                      style: const TextStyle(fontSize: 18, color: Colors.white70),
+                    ),
+                    Text(
+                      'Posizione: ${driver.position} | Punti: ${driver.points}',
+                      style: const TextStyle(fontSize: 16, color: Colors.white70),
+                    ),
+                  ],
                 ),
-                Text(
-                  driver.team,
-                  style: const TextStyle(fontSize: 18, color: Colors.white70),
+              ),
+              IconButton(
+                icon: Icon(
+                  _isFavorite ? Icons.star : Icons.star_border,
+                  color: Colors.white,
+                  size: 30,
                 ),
-                Text(
-                  'Posizione: ${driver.position} | Punti: ${driver.points}',
-                  style: const TextStyle(fontSize: 16, color: Colors.white70),
-                ),
-              ],
-            ),
+                onPressed: _toggleFavorite,
+              ),
+            ],
           ),
-          IconButton(
-            icon: Icon(
-              _isFavorite ? Icons.star : Icons.star_border,
-              color: Colors.white,
-              size: 30,
-            ),
-            onPressed: _toggleFavorite,
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -178,10 +194,8 @@ class _DriverDetailScreenState extends State<DriverDetailScreen>
       builder: (context, snapshot) {
         String teamName = '';
         if (snapshot.hasData) {
-          // Usa solo il match su id numerico (driver.team è l'id del team)
-          final teamId = int.tryParse(driver.team) ?? driver.team;
           final team = snapshot.data!.firstWhere(
-            (c) => c.id == teamId,
+            (c) => c.id == driver.teamId,
             orElse: () => Constructor(id: 0, name: '-', points: 0, logoUrl: '', position: 0),
           );
           teamName = team.name;
@@ -210,8 +224,6 @@ class _DriverDetailScreenState extends State<DriverDetailScreen>
                       _infoRow('Nazionalità', driver.nationality),
                       _infoRow('Numero', driver.number.toString()),
                       _infoRow('Team', teamName),
-                      _infoRow('Nome', driver.name),
-                      _infoRow('Cognome', driver.surname),
                       _infoRow('Posizione', driver.position.toString()),
                       _infoRow('Punti', driver.points.toString()),
                     ],

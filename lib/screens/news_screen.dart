@@ -112,7 +112,7 @@ class _NewsScreenState extends State<NewsScreen> {
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  'Published: ${news.publishDate.day}/${news.publishDate.month}/${news.publishDate.year}',
+                                  'Pubblicato il ${news.publishDate.day}/${news.publishDate.month}/${news.publishDate.year}',
                                   style: TextStyle(color: Colors.grey[600]),
                                 ),
                               ],

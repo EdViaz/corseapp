@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:convert';
 import '../models/f1_models.dart';
 import '../models/user_models.dart';
 import '../services/auth_service.dart';
@@ -96,7 +95,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('News Detail'),
+        title: const Text('Dettagli'),
         backgroundColor: Colors.red,
       ),
       body: SingleChildScrollView(
@@ -133,7 +132,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Published: ${widget.news.publishDate.day}/${widget.news.publishDate.month}/${widget.news.publishDate.year}',
+                    'Pubblicato il ${widget.news.publishDate.day}/${widget.news.publishDate.month}/${widget.news.publishDate.year}',
                     style: TextStyle(
                       color: Colors.grey[600],
                       fontSize: 14,

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:corseapp/services/config.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../models/f1_models.dart';
@@ -19,7 +20,7 @@ class _AdminScreenState extends State<AdminScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final ApiService _apiService = ApiService();
-  final String baseUrl = 'http://localhost:80/api';
+  final String baseUrl = url; 
 
   // Token di autorizzazione per le chiamate API admin
   final String authToken =
@@ -118,92 +119,102 @@ class _AdminScreenState extends State<AdminScreen>
         } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return const Center(child: Text('Nessun pilota disponibile'));
         } else {
-          return ListView.builder(
-            itemCount: snapshot.data!.length,
-            itemBuilder: (context, index) {
-              final driver = snapshot.data![index];
-              return Card(
-                margin: const EdgeInsets.symmetric(
-                  horizontal: 16.0,
-                  vertical: 8.0,
-                ),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundImage: NetworkImage(driver.imageUrl),
-                  ),
-                  title: Text('${driver.name} ${driver.surname}'),
-                  subtitle: Text('${driver.team} - ${driver.points} punti'),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => DriverDetailScreen(driverId: driver.id),
+          return FutureBuilder<List<Constructor>>(
+            future: _constructorsFuture,
+            builder: (context, teamSnapshot) {
+              final constructors = teamSnapshot.data ?? [];
+              return ListView.builder(
+                itemCount: snapshot.data!.length,
+                itemBuilder: (context, index) {
+                  final driver = snapshot.data![index];
+                  final team = constructors.firstWhere(
+                    (c) => c.id == driver.teamId,
+                    orElse: () => Constructor(id: 0, name: '-', points: 0, logoUrl: '', position: 0),
+                  );
+                  return Card(
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 16.0,
+                      vertical: 8.0,
+                    ),
+                    child: ListTile(
+                      leading: CircleAvatar(
+                        backgroundImage: NetworkImage(driver.imageUrl),
                       ),
-                    );
-                  },
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.edit),
-                        onPressed: () => _showDriverForm(driver: driver),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete),
-                        onPressed:
-                            () => _showDeleteConfirmation(
-                              context,
-                              'pilota',
-                              () async {
-                                // Chiamata API per eliminare il pilota
-                                final response = await http.post(
-                                  Uri.parse('$baseUrl/admin_api.php'),
-                                  body: jsonEncode({
-                                    "entity_type": "drivers",
-                                    "action": "delete",
-                                    "id": driver.id,
-                                  }),
-                                  headers: {
-                                    'Content-Type': 'application/json',
-                                    'Authorization': 'Bearer $authToken',
-                                  },
-                                );
+                      title: Text('${driver.name} ${driver.surname}'),
+                      subtitle: Text('${team.name} - ${driver.points} punti'),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => DriverDetailScreen(driverId: driver.id),
+                          ),
+                        );
+                      },
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.edit),
+                            onPressed: () => _showDriverForm(driver: driver),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete),
+                            onPressed:
+                                () => _showDeleteConfirmation(
+                                  context,
+                                  'pilota',
+                                  () async {
+                                    // Chiamata API per eliminare il pilota
+                                    final response = await http.post(
+                                      Uri.parse('$baseUrl/admin_api.php'),
+                                      body: jsonEncode({
+                                        "entity_type": "drivers",
+                                        "action": "delete",
+                                        "id": driver.id,
+                                      }),
+                                      headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': 'Bearer $authToken',
+                                      },
+                                    );
 
-                                if (response.statusCode == 200) {
-                                  final data = jsonDecode(response.body);
-                                  if (data['success']) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'Pilota eliminato con successo',
+                                    if (response.statusCode == 200) {
+                                      final data = jsonDecode(response.body);
+                                      if (data['success']) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'Pilota eliminato con successo',
+                                            ),
+                                          ),
+                                        );
+                                        _refreshData();
+                                      } else {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              'Errore: ${data['error'] ?? "Errore sconosciuto"}',
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    } else {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            'Errore di connessione al server',
+                                          ),
                                         ),
-                                      ),
-                                    );
-                                    _refreshData();
-                                  } else {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          'Errore: ${data['error'] ?? "Errore sconosciuto"}',
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'Errore di connessione al server',
-                                      ),
-                                    ),
-                                  );
-                                }
-                              },
-                            ),
+                                      );
+                                    }
+                                  },
+                                ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
+                    ),
+                  );
+                },
               );
             },
           );
@@ -583,9 +594,6 @@ class _AdminScreenState extends State<AdminScreen>
     final TextEditingController surnameController = TextEditingController(
       text: driver?.surname ?? '',
     );
-    final TextEditingController teamController = TextEditingController(
-      text: driver?.team ?? '',
-    );
     final TextEditingController pointsController = TextEditingController(
       text: driver?.points.toString() ?? '0',
     );
@@ -597,157 +605,143 @@ class _AdminScreenState extends State<AdminScreen>
     );
     final TextEditingController nationalityController = TextEditingController(text: driver?.nationality ?? '');
     final TextEditingController numberController = TextEditingController(text: driver?.number.toString() ?? '');
+    final TextEditingController descriptionController = TextEditingController(text: driver?.description ?? '');
+    int? selectedTeamId = driver?.teamId;
 
     showDialog(
       context: context,
       builder:
-          (context) => AlertDialog(
-            title: Text(driver == null ? 'Aggiungi Pilota' : 'Modifica Pilota'),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: nameController,
-                    decoration: const InputDecoration(labelText: 'Nome'),
+          (context) => FutureBuilder<List<Constructor>>(
+            future: _constructorsFuture,
+            builder: (context, snapshot) {
+              final constructors = snapshot.data ?? [];
+              return AlertDialog(
+                title: Text(driver == null ? 'Aggiungi Pilota' : 'Modifica Pilota'),
+                content: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        controller: nameController,
+                        decoration: const InputDecoration(labelText: 'Nome'),
+                      ),
+                      TextField(
+                        controller: surnameController,
+                        decoration: const InputDecoration(labelText: 'Cognome'),
+                      ),
+                      DropdownButtonFormField<int>(
+                        value: selectedTeamId,
+                        items: constructors.map((c) => DropdownMenuItem(
+                          value: c.id,
+                          child: Text(c.name),
+                        )).toList(),
+                        onChanged: (val) {
+                          selectedTeamId = val;
+                        },
+                        decoration: const InputDecoration(labelText: 'Team'),
+                      ),
+                      TextField(
+                        controller: pointsController,
+                        decoration: const InputDecoration(labelText: 'Punti'),
+                        keyboardType: TextInputType.number,
+                      ),
+                      TextField(
+                        controller: positionController,
+                        decoration: const InputDecoration(labelText: 'Posizione'),
+                        keyboardType: TextInputType.number,
+                      ),
+                      TextField(
+                        controller: imageUrlController,
+                        decoration: const InputDecoration(
+                          labelText: 'URL Immagine',
+                        ),
+                      ),
+                      TextField(
+                        controller: nationalityController,
+                        decoration: const InputDecoration(labelText: 'Nazionalità'),
+                      ),
+                      TextField(
+                        controller: numberController,
+                        decoration: const InputDecoration(labelText: 'Numero'),
+                        keyboardType: TextInputType.number,
+                      ),
+                      TextField(
+                        controller: descriptionController,
+                        decoration: const InputDecoration(labelText: 'Biografia/Descrizione'),
+                        maxLines: 3,
+                      ),
+                    ],
                   ),
-                  TextField(
-                    controller: surnameController,
-                    decoration: const InputDecoration(labelText: 'Cognome'),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Annulla'),
                   ),
-                  TextField(
-                    controller: teamController,
-                    decoration: const InputDecoration(labelText: 'Team'),
-                  ),
-                  TextField(
-                    controller: pointsController,
-                    decoration: const InputDecoration(labelText: 'Punti'),
-                    keyboardType: TextInputType.number,
-                  ),
-                  TextField(
-                    controller: positionController,
-                    decoration: const InputDecoration(labelText: 'Posizione'),
-                    keyboardType: TextInputType.number,
-                  ),
-                  TextField(
-                    controller: imageUrlController,
-                    decoration: const InputDecoration(
-                      labelText: 'URL Immagine',
-                    ),
-                  ),
-                  TextField(
-                    controller: nationalityController,
-                    decoration: const InputDecoration(labelText: 'Nazionalità'),
-                  ),
-                  TextField(
-                    controller: numberController,
-                    decoration: const InputDecoration(labelText: 'Numero'),
-                    keyboardType: TextInputType.number,
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Annulla'),
-              ),
-              TextButton(
-                onPressed: () async {
-                  if (driver != null) {
-                    final response = await http.post(
-                      Uri.parse('$baseUrl/admin_api.php'),
-                      body: jsonEncode({
-                        "entity_type": "drivers",
-                        "action": "update",
-                        "id": driver.id,
-                        "name": nameController.text,
-                        "surname": surnameController.text,
-                        "team": teamController.text,
-                        "points": int.parse(pointsController.text),
-                        "position": int.parse(positionController.text),
-                        "image_url": imageUrlController.text,
-                        "nationality": nationalityController.text,
-                        "number": int.tryParse(numberController.text) ?? 0,
-                      }),
-                      headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer $authToken',
-                      },
-                    );
-                    if (response.statusCode == 200) {
-                      final data = jsonDecode(response.body);
-                      if (data['success']) {
+                  TextButton(
+                    onPressed: () async {
+                      if (selectedTeamId == null) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Pilota aggiornato con successo'),
-                          ),
+                          const SnackBar(content: Text('Seleziona un team!')),
                         );
+                        return;
                       }
-                    }
-                  } else {
-                    // Aggiungi pilota
-                    final response = await http.post(
-                      Uri.parse('$baseUrl/admin_api.php'),
-                      body: jsonEncode({
+                      final body = {
                         "entity_type": "drivers",
-                        "action": "create",
+                        "action": driver != null ? "update" : "create",
+                        if (driver != null) "id": driver.id,
                         "name": nameController.text,
                         "surname": surnameController.text,
-                        "team": teamController.text,
+                        "team_id": selectedTeamId,
                         "points": int.parse(pointsController.text),
                         "position": int.parse(positionController.text),
                         "image_url": imageUrlController.text,
                         "nationality": nationalityController.text,
                         "number": int.tryParse(numberController.text) ?? 0,
-                      }),
-                      headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer $authToken',
-                      },
-                    );
-
-                    if (response.statusCode == 200) {
-                      final data = jsonDecode(response.body);
-                      if (data['success']) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Pilota aggiunto con successo'),
-                          ),
-                        );
+                        "description": descriptionController.text,
+                      };
+                      final response = await http.post(
+                        Uri.parse('$baseUrl/admin_api.php'),
+                        body: jsonEncode(body),
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'Authorization': 'Bearer $authToken',
+                        },
+                      );
+                      if (response.statusCode == 200) {
+                        final data = jsonDecode(response.body);
+                        if (data['success']) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(driver == null
+                                  ? 'Pilota aggiunto con successo'
+                                  : 'Pilota aggiornato con successo'),
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Errore: ${data['error'] ?? "Errore sconosciuto"}',
+                              ),
+                            ),
+                          );
+                        }
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Errore: ${data['error'] ?? "Errore sconosciuto"}',
-                            ),
+                          const SnackBar(
+                            content: Text('Errore di connessione al server'),
                           ),
                         );
                       }
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Errore di connessione al server'),
-                        ),
-                      );
-                    }
-                  }
-
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        driver == null
-                            ? 'Pilota aggiunto con successo'
-                            : 'Pilota aggiornato con successo',
-                      ),
-                    ),
-                  );
-                  _refreshData();
-                },
-                child: const Text('Salva'),
-              ),
-            ],
+                      Navigator.pop(context);
+                      _refreshData();
+                    },
+                    child: const Text('Salva'),
+                  ),
+                ],
+              );
+            },
           ),
     );
   }
@@ -985,7 +979,6 @@ class _AdminScreenState extends State<AdminScreen>
     final TextEditingController dateController = TextEditingController(text: race != null ? '${race.date.year}-${race.date.month.toString().padLeft(2, '0')}-${race.date.day.toString().padLeft(2, '0')}' : '');
     final TextEditingController flagUrlController = TextEditingController(text: race?.flagUrl ?? '');
     bool isPast = race?.isPast ?? false;
-    DateTime? selectedDate = race?.date;
     
     showDialog(
       context: context,

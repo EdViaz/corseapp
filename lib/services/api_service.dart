@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:corseapp/services/config.dart';
 import 'package:http/http.dart' as http;
 import '../models/f1_models.dart';
 import '../models/driver_details.dart';
@@ -10,9 +11,8 @@ class ApiService {
   // For web browser testing, we need to use the correct URL format
 
   //per far funzionare docker
-  final String baseUrl = 'http://localhost:80/api';
+  final String baseUrl = url;
 
-  //final String baseUrl = 'http://192.168.0.30/backend/api';
 
   final bool debugMode = true;
 
@@ -84,7 +84,7 @@ class ApiService {
               id: driver.id,
               name: driver.name,
               surname: driver.surname,
-              team: driver.team,
+              teamId: driver.teamId, // Cambiato da team a teamId
               points: driver.points,
               imageUrl: driver.imageUrl,
               position: i + 1, // La posizione è l'indice + 1
@@ -264,9 +264,7 @@ class ApiService {
           // Aggiungiamo dati fittizi per la dimostrazione
           driverData['nationality'] = driverData['nationality'] ?? 'Italia';
           driverData['number'] = driverData['number'] ?? 16;
-          driverData['biography'] =
-              driverData['biography'] ??
-              'Biografia del pilota. Questo è un testo di esempio che descrive la carriera e la vita del pilota.';
+          driverData['biography'] = driverData['description'] ?? driverData['biography'] ?? '';
           driverData['statistics'] = {
             'wins': 5,
             'podiums': 15,
@@ -288,6 +286,9 @@ class ApiService {
 
           // Imposta lo stato dei preferiti
           driverData['is_favorite'] = isFavorite;
+
+          // Adatta il campo team_id per DriverDetails
+          driverData['team_id'] = driverData['team_id'] is int ? driverData['team_id'] : int.tryParse(driverData['team_id']?.toString() ?? '0') ?? 0;
 
           return DriverDetails.fromJson(driverData);
         } catch (e) {

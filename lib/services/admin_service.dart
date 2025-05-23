@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:corseapp/services/config.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/f1_models.dart';
@@ -6,9 +7,7 @@ import '../models/f1_models.dart';
 class AdminService {
   // Base URL for the PHP API
 
-   final String baseUrl = 'http://localhost:80/api';
-
-  //final String baseUrl = 'http://192.168.0.30/backend/api';
+   final String baseUrl = url;
 
   // Store the auth token after login
   String? _authToken;
@@ -177,7 +176,7 @@ class AdminService {
           if (driver.id > 0) 'id': driver.id,
           'name': driver.name,
           'surname': driver.surname,
-          'team': driver.team,
+          'team_id': driver.teamId,
           'points': driver.points,
           'image_url': driver.imageUrl,
           'position': driver.position,
