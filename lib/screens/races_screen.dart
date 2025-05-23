@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/f1_models.dart';
 import '../services/api_service.dart';
 import '../services/image_service.dart';
+import 'race_detail_screen.dart';
 
 // Schermata che mostra il calendario delle gare di Formula 1
 // Divisa in due tab: gare future e gare passate
@@ -35,6 +36,13 @@ class _RacesScreenState extends State<RacesScreen> with SingleTickerProviderStat
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  Future<void> _refreshRaces() async {
+    setState(() {
+      _racesFuture = _apiService.getRaces();
+    });
+    await _racesFuture;
   }
 
   @override
@@ -71,10 +79,16 @@ class _RacesScreenState extends State<RacesScreen> with SingleTickerProviderStat
               controller: _tabController,
               children: [
                 // Upcoming Races Tab
-                _buildRacesList(upcomingRaces, isUpcoming: true),
+                RefreshIndicator(
+                  onRefresh: _refreshRaces,
+                  child: _buildRacesList(upcomingRaces, isUpcoming: true),
+                ),
                 
                 // Past Races Tab
-                _buildRacesList(pastRaces, isUpcoming: false),
+                RefreshIndicator(
+                  onRefresh: _refreshRaces,
+                  child: _buildRacesList(pastRaces, isUpcoming: false),
+                ),
               ],
             );
           }
@@ -98,14 +112,20 @@ class _RacesScreenState extends State<RacesScreen> with SingleTickerProviderStat
           margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
           child: ListTile(
             leading: race.flagUrl.isNotEmpty
-                ? Image.network(
-                    ImageService.getProxyImageUrl(
-                      race.flagUrl,
-                      width: 40,
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: Image.network(
+                      ImageService.getProxyImageUrl(
+                        race.flagUrl,
+                        width: 48,
+                      ),
+                      width: 48,
+                      height: 32,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Icon(Icons.flag, size: 40);
+                      },
                     ),
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Icon(Icons.flag, size: 40);
-                    },
                   )
                 : const Icon(Icons.flag, size: 40),
             title: Text(
@@ -127,6 +147,15 @@ class _RacesScreenState extends State<RacesScreen> with SingleTickerProviderStat
                 Text(race.country),
               ],
             ),
+            onTap: () {
+              // Naviga alla schermata di dettaglio gara
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => RaceDetailScreen(race: race),
+                ),
+              );
+            },
           ),
         );
       },

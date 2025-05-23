@@ -4,6 +4,7 @@ import 'standings_screen.dart';
 import 'races_screen.dart';
 import 'settings_screen.dart';
 import 'user_screen.dart';
+import 'profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,7 +20,7 @@ class _HomeScreenState extends State<HomeScreen> {
     const NewsScreen(),
     const StandingsScreen(),
     const RacesScreen(),
-    const UserScreen()
+    const ProfileScreen()
   ];
 
   void _onItemTapped(int index) {
@@ -48,6 +49,14 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: _screens[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: Theme.of(context).colorScheme.secondary,
+        unselectedItemColor: Theme.of(context).brightness == Brightness.dark
+            ? Colors.white70
+            : Colors.black54,
+        selectedIconTheme: const IconThemeData(size: 30),
+        unselectedIconTheme: const IconThemeData(size: 26),
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(icon: Icon(Icons.article), label: 'News'),
           BottomNavigationBarItem(
@@ -64,7 +73,6 @@ class _HomeScreenState extends State<HomeScreen> {
           )
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: Colors.red,
         onTap: _onItemTapped,
       ),
     );

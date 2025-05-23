@@ -88,6 +88,9 @@ class ApiService {
               points: driver.points,
               imageUrl: driver.imageUrl,
               position: i + 1, // La posizione è l'indice + 1
+              victories: driver.victories,
+              nationality: driver.nationality,
+              number: driver.number,
             );
           }
 
@@ -299,6 +302,26 @@ class ApiService {
       }
     } catch (e) {
       throw Exception('Network error: ${e.toString()}');
+    }
+  }
+
+  // Recupera una notizia tramite il suo id
+  Future<News?> getNewsById(int newsId) async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/news.php'));
+      if (response.statusCode == 200) {
+        if (response.body.isEmpty) return null;
+        List<dynamic> data = json.decode(response.body);
+        final newsJson = data.firstWhere(
+          (n) => n['id'] == newsId || int.tryParse(n['id'].toString()) == newsId,
+          orElse: () => null,
+        );
+        if (newsJson == null) return null;
+        return News.fromJson(newsJson);
+      }
+      return null;
+    } catch (e) {
+      return null;
     }
   }
 }

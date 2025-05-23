@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../models/driver_details.dart';
+import '../models/f1_models.dart';
 import '../services/api_service.dart';
 import '../services/image_service.dart';
+import '../services/preferences_service.dart';
 
 // Schermata che mostra i dettagli completi di un pilota di Formula 1
 // Visualizza informazioni personali, statistiche e contenuti multimediali
@@ -19,22 +21,22 @@ class DriverDetailScreen extends StatefulWidget {
 
 class _DriverDetailScreenState extends State<DriverDetailScreen>
     with SingleTickerProviderStateMixin {
-  // Controller per gestire le tab (Profilo, Statistiche, Media)
+  // Controller per gestire le tab (Profilo, Statistiche)
   late TabController _tabController;
   // Future per i dati dettagliati del pilota
   late Future<DriverDetails> _driverDetailsFuture;
   // Servizio per le chiamate API
   final ApiService _apiService = ApiService();
-  // Stato per la modalità scura/chiara
-  bool _isDarkMode = false;
+  // Servizio per la gestione delle preferenze
+  final PreferencesService _preferencesService = PreferencesService();
   // Stato per indicare se il pilota è tra i preferiti
   bool _isFavorite = false;
 
   @override
   void initState() {
     super.initState();
-    // Inizializza il controller con 3 tab (Profilo, Statistiche, Media)
-    _tabController = TabController(length: 3, vsync: this);
+    // Inizializza il controller con 2 tab (Profilo, Statistiche)
+    _tabController = TabController(length: 2, vsync: this);
     // Carica i dettagli del pilota all'avvio della schermata
     _loadDriverDetails();
   }
@@ -57,75 +59,68 @@ class _DriverDetailScreenState extends State<DriverDetailScreen>
     super.dispose();
   }
 
-  // Cambia tra tema chiaro e scuro
-  void _toggleTheme() {
-    setState(() {
-      _isDarkMode = !_isDarkMode;
-    });
-  }
-
   // Aggiunge o rimuove il pilota dai preferiti
-  void _toggleFavorite() {
+  void _toggleFavorite() async {
     setState(() {
       _isFavorite = !_isFavorite;
     });
-    // Qui si potrebbe implementare la logica per salvare i preferiti
-    // TODO: Implementare la persistenza dei preferiti utilizzando SharedPreferences
+    if (_isFavorite) {
+      await _preferencesService.addFavoriteDriver(widget.driverId);
+    } else {
+      await _preferencesService.removeFavoriteDriver(widget.driverId);
+    }
+    // Non fare pop e push! Aggiorna solo lo stato locale.
   }
 
   @override
   Widget build(BuildContext context) {
-    return Theme(
-      data: _isDarkMode ? ThemeData.dark() : ThemeData.light(),
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Dettagli Pilota'),
-          backgroundColor: Colors.red,
-          actions: [
-            IconButton(
-              icon: Icon(_isDarkMode ? Icons.light_mode : Icons.dark_mode),
-              onPressed: _toggleTheme,
-            ),
-          ],
-        ),
-        body: FutureBuilder<DriverDetails>(
-          future: _driverDetailsFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            } else if (snapshot.hasError) {
-              return Center(child: Text('Errore: ${snapshot.error}'));
-            } else if (!snapshot.hasData) {
-              return const Center(child: Text('Nessun dato disponibile'));
-            }
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Dettagli Pilota'),
+        backgroundColor: Colors.red,
+        // RIMOSSO: pulsante dark mode
+        // actions: [
+        //   IconButton(
+        //     icon: Icon(_isDarkMode ? Icons.light_mode : Icons.dark_mode),
+        //     onPressed: _toggleTheme,
+        //   ),
+        // ],
+      ),
+      body: FutureBuilder<DriverDetails>(
+        future: _driverDetailsFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Errore: [${snapshot.error}'));
+          } else if (!snapshot.hasData) {
+            return const Center(child: Text('Nessun dato disponibile'));
+          }
 
-            final driver = snapshot.data!;
-            return Column(
-              children: [
-                _buildDriverHeader(driver),
-                TabBar(
+          final driver = snapshot.data!;
+          return Column(
+            children: [
+              _buildDriverHeader(driver),
+              TabBar(
+                controller: _tabController,
+                labelColor: Colors.red,
+                tabs: const [
+                  Tab(text: 'Profilo'),
+                  Tab(text: 'Statistiche'),
+                ],
+              ),
+              Expanded(
+                child: TabBarView(
                   controller: _tabController,
-                  labelColor: _isDarkMode ? Colors.white : Colors.black,
-                  tabs: const [
-                    Tab(text: 'Profilo'),
-                    Tab(text: 'Statistiche'),
-                    Tab(text: 'Media'),
+                  children: [
+                    _buildProfileTab(driver),
+                    _buildStatsTab(driver),
                   ],
                 ),
-                Expanded(
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _buildProfileTab(driver),
-                      _buildStatsTab(driver),
-                      _buildMediaTab(driver),
-                    ],
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -178,50 +173,73 @@ class _DriverDetailScreenState extends State<DriverDetailScreen>
   }
 
   Widget _buildProfileTab(DriverDetails driver) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Card(
-            elevation: 4,
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Informazioni Personali',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+    return FutureBuilder<List<Constructor>>(
+      future: ApiService().getConstructorStandings(),
+      builder: (context, snapshot) {
+        String teamName = '';
+        if (snapshot.hasData) {
+          // Usa solo il match su id numerico (driver.team è l'id del team)
+          final teamId = int.tryParse(driver.team) ?? driver.team;
+          final team = snapshot.data!.firstWhere(
+            (c) => c.id == teamId,
+            orElse: () => Constructor(id: 0, name: '-', points: 0, logoUrl: '', position: 0),
+          );
+          teamName = team.name;
+        } else if (snapshot.connectionState == ConnectionState.waiting) {
+          teamName = 'Caricamento...';
+        } else {
+          teamName = '-';
+        }
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Card(
+                elevation: 4,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Informazioni Personali',
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                      const Divider(),
+                      _infoRow('Nazionalità', driver.nationality),
+                      _infoRow('Numero', driver.number.toString()),
+                      _infoRow('Team', teamName),
+                      _infoRow('Nome', driver.name),
+                      _infoRow('Cognome', driver.surname),
+                      _infoRow('Posizione', driver.position.toString()),
+                      _infoRow('Punti', driver.points.toString()),
+                    ],
                   ),
-                  const Divider(),
-                  _infoRow('Nazionalità', driver.nationality),
-                  _infoRow('Numero', driver.number.toString()),
-                  _infoRow('Team', driver.team),
-                ],
+                ),
               ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Card(
-            elevation: 4,
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Biografia',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              const SizedBox(height: 16),
+              Card(
+                elevation: 4,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Biografia',
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                      const Divider(),
+                      Text(driver.biography),
+                    ],
                   ),
-                  const Divider(),
-                  Text(driver.biography),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -295,45 +313,6 @@ class _DriverDetailScreenState extends State<DriverDetailScreen>
         ],
       ),
     );
-  }
-
-  Widget _buildMediaTab(DriverDetails driver) {
-    return driver.mediaGallery.isEmpty
-        ? const Center(child: Text('Nessun contenuto multimediale disponibile'))
-        : GridView.builder(
-          padding: const EdgeInsets.all(8.0),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 8.0,
-            mainAxisSpacing: 8.0,
-          ),
-          itemCount: driver.mediaGallery.length,
-          itemBuilder: (context, index) {
-            final mediaUrl = driver.mediaGallery[index];
-            return Card(
-              elevation: 4,
-              child: InkWell(
-                onTap: () {
-                  // Visualizzazione a schermo intero dell'immagine
-                  showDialog(
-                    context: context,
-                    builder:
-                        (context) => Dialog(
-                          child: Image.network(
-                            ImageService.getProxyImageUrl(mediaUrl, width: 800),
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                  );
-                },
-                child: Image.network(
-                  ImageService.getProxyImageUrl(mediaUrl, width: 300),
-                  fit: BoxFit.cover,
-                ),
-              ),
-            );
-          },
-        );
   }
 
   Widget _infoRow(String label, String value) {

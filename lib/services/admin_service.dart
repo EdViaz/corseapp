@@ -176,10 +176,13 @@ class AdminService {
           'action': driver.id > 0 ? 'update' : 'create',
           if (driver.id > 0) 'id': driver.id,
           'name': driver.name,
+          'surname': driver.surname,
           'team': driver.team,
           'points': driver.points,
           'image_url': driver.imageUrl,
           'position': driver.position,
+          'nationality': driver.nationality,
+          'number': driver.number,
         }),
       );
 

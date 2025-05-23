@@ -17,14 +17,7 @@ class ImageService {
 
   // Method to get the correct image URL based on platform
   static String getProxyImageUrl(String originalUrl, {required int width}) {
-    // Only use proxy for web platform
-    if (kIsWeb) {
-      // Encode the URL to make it safe for query parameters
-      final encodedUrl = Uri.encodeComponent(originalUrl);
-      return '$baseUrl/image_proxy.php?url=$encodedUrl&width=$width';
-    }
-
-    // For mobile platforms, return the original URL
+    // Usa sempre l'URL originale, anche su web
     return originalUrl;
   }
 

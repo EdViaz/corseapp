@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../models/f1_models.dart';
 import '../services/api_service.dart';
+import 'constructor_detail_screen.dart';
+import 'race_detail_screen.dart';
+import 'driver_detail_screen.dart';
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({Key? key}) : super(key: key);
@@ -26,11 +29,12 @@ class _AdminScreenState extends State<AdminScreen>
   late Future<List<Driver>> _driversFuture;
   late Future<List<Constructor>> _constructorsFuture;
   late Future<List<News>> _newsFuture;
+  late Future<List<Race>> _racesFuture;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _refreshData();
   }
 
@@ -39,6 +43,7 @@ class _AdminScreenState extends State<AdminScreen>
       _driversFuture = _apiService.getDriverStandings();
       _constructorsFuture = _apiService.getConstructorStandings();
       _newsFuture = _apiService.getNews();
+      _racesFuture = _apiService.getRaces();
     });
   }
 
@@ -60,6 +65,7 @@ class _AdminScreenState extends State<AdminScreen>
             Tab(text: 'Piloti'),
             Tab(text: 'Team'),
             Tab(text: 'Notizie'),
+            Tab(text: 'Gare'),
           ],
           indicatorColor: Colors.white,
           labelColor: Colors.white,
@@ -78,18 +84,20 @@ class _AdminScreenState extends State<AdminScreen>
           _buildDriversTab(),
           _buildConstructorsTab(),
           _buildNewsTab(),
+          _buildRacesTab(),
         ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // Mostra dialogo per aggiungere un nuovo elemento in base alla tab corrente
           final currentTab = _tabController.index;
           if (currentTab == 0) {
             _showDriverForm();
           } else if (currentTab == 1) {
             _showConstructorForm();
-          } else {
+          } else if (currentTab == 2) {
             _showNewsForm();
+          } else if (currentTab == 3) {
+            _showRaceForm();
           }
         },
         backgroundColor: Colors.red,
@@ -125,6 +133,14 @@ class _AdminScreenState extends State<AdminScreen>
                   ),
                   title: Text('${driver.name} ${driver.surname}'),
                   subtitle: Text('${driver.team} - ${driver.points} punti'),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => DriverDetailScreen(driverId: driver.id),
+                      ),
+                    );
+                  },
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -227,6 +243,14 @@ class _AdminScreenState extends State<AdminScreen>
                   ),
                   title: Text(constructor.name),
                   subtitle: Text('${constructor.points} punti'),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ConstructorDetailScreen(constructor: constructor),
+                      ),
+                    );
+                  },
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -411,6 +435,116 @@ class _AdminScreenState extends State<AdminScreen>
     );
   }
 
+  // Tab Gare
+  Widget _buildRacesTab() {
+    return FutureBuilder<List<Race>>(
+      future: _racesFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return Center(child: Text('Errore: ${snapshot.error}'));
+        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return const Center(child: Text('Nessuna gara disponibile'));
+        } else {
+          return ListView.builder(
+            itemCount: snapshot.data!.length,
+            itemBuilder: (context, index) {
+              final race = snapshot.data![index];
+              return Card(
+                margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                child: ListTile(
+                  leading: race.flagUrl.isNotEmpty
+                      ? Image.network(
+                          race.flagUrl,
+                          width: 40,
+                          height: 40,
+                          errorBuilder: (context, error, stackTrace) => const Icon(Icons.flag),
+                        )
+                      : const Icon(Icons.flag),
+                  title: Text(race.name),
+                  subtitle: Text('${race.circuit} - ${race.date.day}/${race.date.month}/${race.date.year}'),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => RaceDetailScreen(race: race),
+                      ),
+                    );
+                  },
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit),
+                        onPressed: () {
+                          _showRaceForm(race: race);
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete),
+                        onPressed: () async {
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('Elimina gara'),
+                              content: const Text('Sei sicuro di voler eliminare questa gara?'),
+                              actions: [
+                                TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Annulla')),
+                                TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Elimina')),
+                              ],
+                            ),
+                          );
+                          if (confirm == true) {
+                            try {
+                              final response = await http.post(
+                                Uri.parse('$baseUrl/admin_api.php'),
+                                body: jsonEncode({
+                                  "entity_type": "races",
+                                  "action": "delete",
+                                  "id": race.id,
+                                }),
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                  'Authorization': 'Bearer $authToken',
+                                },
+                              );
+                              if (response.statusCode == 200) {
+                                final data = jsonDecode(response.body);
+                                if (data['success']) {
+                                  _refreshData();
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Gara eliminata!')),
+                                  );
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Errore: ${data['error'] ?? "Errore sconosciuto"}')),
+                                  );
+                                }
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Errore di connessione al server')),
+                                );
+                              }
+                            } catch (e) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Errore: $e')),
+                              );
+                            }
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        }
+      },
+    );
+  }
+
   // Dialogo di conferma eliminazione
   void _showDeleteConfirmation(
     BuildContext context,
@@ -461,6 +595,8 @@ class _AdminScreenState extends State<AdminScreen>
     final TextEditingController positionController = TextEditingController(
       text: driver?.position.toString() ?? '0',
     );
+    final TextEditingController nationalityController = TextEditingController(text: driver?.nationality ?? '');
+    final TextEditingController numberController = TextEditingController(text: driver?.number.toString() ?? '');
 
     showDialog(
       context: context,
@@ -499,6 +635,15 @@ class _AdminScreenState extends State<AdminScreen>
                       labelText: 'URL Immagine',
                     ),
                   ),
+                  TextField(
+                    controller: nationalityController,
+                    decoration: const InputDecoration(labelText: 'Nazionalità'),
+                  ),
+                  TextField(
+                    controller: numberController,
+                    decoration: const InputDecoration(labelText: 'Numero'),
+                    keyboardType: TextInputType.number,
+                  ),
                 ],
               ),
             ),
@@ -522,6 +667,8 @@ class _AdminScreenState extends State<AdminScreen>
                         "points": int.parse(pointsController.text),
                         "position": int.parse(positionController.text),
                         "image_url": imageUrlController.text,
+                        "nationality": nationalityController.text,
+                        "number": int.tryParse(numberController.text) ?? 0,
                       }),
                       headers: {
                         'Content-Type': 'application/json',
@@ -551,6 +698,8 @@ class _AdminScreenState extends State<AdminScreen>
                         "points": int.parse(pointsController.text),
                         "position": int.parse(positionController.text),
                         "image_url": imageUrlController.text,
+                        "nationality": nationalityController.text,
+                        "number": int.tryParse(numberController.text) ?? 0,
                       }),
                       headers: {
                         'Content-Type': 'application/json',
@@ -826,6 +975,159 @@ class _AdminScreenState extends State<AdminScreen>
               ),
             ],
           ),
+    );
+  }
+
+  // Form per gare
+  void _showRaceForm({Race? race}) {
+    final TextEditingController nameController = TextEditingController(text: race?.name ?? '');
+    final TextEditingController circuitController = TextEditingController(text: race?.circuit ?? '');
+    final TextEditingController dateController = TextEditingController(text: race != null ? '${race.date.year}-${race.date.month.toString().padLeft(2, '0')}-${race.date.day.toString().padLeft(2, '0')}' : '');
+    final TextEditingController flagUrlController = TextEditingController(text: race?.flagUrl ?? '');
+    bool isPast = race?.isPast ?? false;
+    DateTime? selectedDate = race?.date;
+    
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            // Funzione per controllare se la data è futura
+            bool isDateFuture() {
+              try {
+                final date = DateTime.parse(dateController.text);
+                final now = DateTime.now();
+                return date.isAfter(DateTime(now.year, now.month, now.day));
+              } catch (_) {
+                return false;
+              }
+            }
+            final bool disableIsPast = isDateFuture();
+            return AlertDialog(
+              title: Text(race == null ? 'Aggiungi Gara' : 'Modifica Gara'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: nameController,
+                      decoration: const InputDecoration(labelText: 'Nome gara'),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: circuitController,
+                      decoration: const InputDecoration(labelText: 'Circuito'),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: dateController,
+                      decoration: const InputDecoration(labelText: 'Data (YYYY-MM-DD)'),
+                      onChanged: (_) => setState(() {}),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: flagUrlController,
+                      decoration: const InputDecoration(labelText: 'URL bandiera'),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: disableIsPast ? false : isPast,
+                          onChanged: disableIsPast
+                              ? null
+                              : (val) {
+                                  setState(() {
+                                    isPast = val ?? false;
+                                  });
+                                },
+                        ),
+                        Text(
+                          'Gara passata',
+                          style: TextStyle(
+                            color: disableIsPast ? Colors.grey : null,
+                          ),
+                        ),
+                        if (disableIsPast)
+                          const Padding(
+                            padding: EdgeInsets.only(left: 8.0),
+                            child: Icon(Icons.info_outline, color: Colors.grey, size: 18),
+                          ),
+                      ],
+                    ),
+                    if (disableIsPast)
+                      const Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Il flag "Gara passata" è impostato automaticamente per le date future.',
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Annulla'),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    final name = nameController.text.trim();
+                    final circuit = circuitController.text.trim();
+                    final dateStr = dateController.text.trim();
+                    final flagUrl = flagUrlController.text.trim();
+                    if (name.isEmpty || circuit.isEmpty || dateStr.isEmpty) return;
+                    try {
+                      final response = await http.post(
+                        Uri.parse('$baseUrl/admin_api.php'),
+                        body: jsonEncode({
+                          "entity_type": "races",
+                          "action": race == null ? "add" : "edit",
+                          if (race != null) "id": race.id,
+                          "name": name,
+                          "circuit": circuit,
+                          "date": dateStr,
+                          "flagUrl": flagUrl,
+                          // Se la data è futura, forziamo isPast a 0
+                          "isPast": disableIsPast ? 0 : (isPast ? 1 : 0),
+                        }),
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'Authorization': 'Bearer $authToken',
+                        },
+                      );
+                      if (response.statusCode == 200) {
+                        final data = jsonDecode(response.body);
+                        if (data['success']) {
+                          Navigator.pop(context);
+                          _refreshData();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(race == null ? 'Gara aggiunta!' : 'Gara modificata!')),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Errore: ${data['error'] ?? "Errore sconosciuto"}')),
+                          );
+                        }
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Errore HTTP ${response.statusCode}: ${response.body}')),
+                        );
+                      }
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Errore: $e')),
+                      );
+                    }
+                  },
+                  child: const Text('Salva'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }

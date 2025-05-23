@@ -40,6 +40,17 @@ class _StandingsScreenState extends State<StandingsScreen>
     super.dispose();
   }
 
+  Future<void> _refreshStandings() async {
+    setState(() {
+      _driversFuture = _apiService.getDriverStandings();
+      _constructorsFuture = _apiService.getConstructorStandings();
+    });
+    await Future.wait([
+      _driversFuture,
+      _constructorsFuture,
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -60,150 +71,156 @@ class _StandingsScreenState extends State<StandingsScreen>
         children: [
           // Tab Piloti - Mostra la classifica piloti
           // FutureBuilder gestisce lo stato di caricamento dei dati dei piloti
-          FutureBuilder<List<Driver>>(
-            future: _driversFuture,
-            builder: (context, snapshot) {
-              // Mostra indicatore di caricamento mentre i dati vengono recuperati
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              // Gestisce eventuali errori durante il recupero dei dati
-              else if (snapshot.hasError) {
-                return Center(child: Text('Error: ${snapshot.error}'));
-              }
-              // Gestisce il caso in cui non ci siano dati disponibili
-              else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                return const Center(
-                  child: Text('No driver standings available'),
-                );
-              }
-              // Costruisce la lista dei piloti quando i dati sono disponibili
-              else {
-                return ListView.builder(
-                  itemCount: snapshot.data!.length,
-                  itemBuilder: (context, index) {
-                    final driver = snapshot.data![index];
-                    // Card per ogni pilota nella classifica
-                    return Card(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 16.0,
-                        vertical: 8.0,
-                      ),
-                      // InkWell per rendere l'intera card cliccabile
-                      child: InkWell(
-                        // Naviga alla schermata di dettaglio quando si tocca un pilota
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder:
-                                  (context) =>
+          RefreshIndicator(
+            onRefresh: _refreshStandings,
+            child: FutureBuilder<List<Driver>>(
+              future: _driversFuture,
+              builder: (context, snapshot) {
+                // Mostra indicatore di caricamento mentre i dati vengono recuperati
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                // Gestisce eventuali errori durante il recupero dei dati
+                else if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                }
+                // Gestisce il caso in cui non ci siano dati disponibili
+                else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const Center(
+                    child: Text('No driver standings available'),
+                  );
+                }
+                // Costruisce la lista dei piloti quando i dati sono disponibili
+                else {
+                  return ListView.builder(
+                    itemCount: snapshot.data!.length,
+                    itemBuilder: (context, index) {
+                      final driver = snapshot.data![index];
+                      // Card per ogni pilota nella classifica
+                      return Card(
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 16.0,
+                          vertical: 8.0,
+                        ),
+                        // InkWell per rendere l'intera card cliccabile
+                        child: InkWell(
+                          // Naviga alla schermata di dettaglio quando si tocca un pilota
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (context) =>
                                       DriverDetailScreen(driverId: driver.id),
-                            ),
-                          );
-                        },
-                        child: ListTile(
-                          leading: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 30,
-                                alignment: Alignment.center,
-                                child: Text(
-                                  '${driver.position}',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
+                              ),
+                            );
+                          },
+                          child: ListTile(
+                            leading: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 30,
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    '${driver.position}',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              const SizedBox(width: 8),
-                              CircleAvatar(
-                                backgroundImage: NetworkImage(driver.imageUrl),
-                              ),
-                            ],
-                          ),
-                          title: Text(driver.name + " " + driver.surname),
-                          subtitle: Text(driver.team),
-                          trailing: Text(
-                            '${driver.points} pts',
-                            style: const TextStyle(fontWeight: FontWeight.bold),
+                                const SizedBox(width: 8),
+                                CircleAvatar(
+                                  backgroundImage: NetworkImage(driver.imageUrl),
+                                ),
+                              ],
+                            ),
+                            title: Text(driver.name + " " + driver.surname),
+                            subtitle: Text(driver.team),
+                            trailing: Text(
+                              '${driver.points} pts',
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
                           ),
                         ),
-                      ),
-                    );
-                  },
-                );
-              }
-            },
+                      );
+                    },
+                  );
+                }
+              },
+            ),
           ),
 
           // Constructors Tab
-          FutureBuilder<List<Constructor>>(
-            future: _constructorsFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              } else if (snapshot.hasError) {
-                return Center(child: Text('Error: ${snapshot.error}'));
-              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                return const Center(
-                  child: Text('No constructor standings available'),
-                );
-              } else {
-                return ListView.builder(
-                  itemCount: snapshot.data!.length,
-                  itemBuilder: (context, index) {
-                    final constructor = snapshot.data![index];
-                    return Card(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 8.0,
-                        vertical: 4.0,
-                      ),
-                      child: InkWell(
-                        onTap: () {
-                          // Qui si potrebbe aggiungere una schermata di dettaglio del team in futuro
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Team: ${constructor.name}'),
-                            ),
-                          );
-                        },
-                        child: ListTile(
-                          leading: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 30,
-                                alignment: Alignment.center,
-                                child: Text(
-                                  '${constructor.position}',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
+          RefreshIndicator(
+            onRefresh: _refreshStandings,
+            child: FutureBuilder<List<Constructor>>(
+              future: _constructorsFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const Center(
+                    child: Text('No constructor standings available'),
+                  );
+                } else {
+                  return ListView.builder(
+                    itemCount: snapshot.data!.length,
+                    itemBuilder: (context, index) {
+                      final constructor = snapshot.data![index];
+                      return Card(
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 8.0,
+                          vertical: 4.0,
+                        ),
+                        child: InkWell(
+                          onTap: () {
+                            // Qui si potrebbe aggiungere una schermata di dettaglio del team in futuro
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Team: ${constructor.name}'),
+                              ),
+                            );
+                          },
+                          child: ListTile(
+                            leading: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 30,
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    '${constructor.position}',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              const SizedBox(width: 8),
-                              CircleAvatar(
-                                backgroundImage: NetworkImage(
-                                  constructor.logoUrl,
+                                const SizedBox(width: 8),
+                                CircleAvatar(
+                                  backgroundImage: NetworkImage(
+                                    constructor.logoUrl,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          title: Text(constructor.name),
-                          trailing: Text(
-                            '${constructor.points} pts',
-                            style: const TextStyle(fontWeight: FontWeight.bold),
+                              ],
+                            ),
+                            title: Text(constructor.name),
+                            trailing: Text(
+                              '${constructor.points} pts',
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
                           ),
                         ),
-                      ),
-                    );
-                  },
-                );
-              }
-            },
+                      );
+                    },
+                  );
+                }
+              },
+            ),
           ),
         ],
       ),

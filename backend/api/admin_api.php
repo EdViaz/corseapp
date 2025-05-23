@@ -201,16 +201,18 @@ function handleDrivers($conn, $action, $data)
             $points = (float)$data['points'];
             $position = (int)$data['position'];
             $image_url = isset($data['image_url']) ? htmlspecialchars(trim($data['image_url'])) : '';
+            $nationality = isset($data['nationality']) ? htmlspecialchars(trim($data['nationality'])) : '';
+            $number = isset($data['number']) ? intval($data['number']) : 0;
 
             // Check if we're updating an existing record or creating a new one
             if (isset($data['id']) && $data['id'] > 0) {
                 // Update existing driver
-                $sql = "UPDATE drivers SET name = :name,surname = :surname, team = :team, points = :points, position = :position, image_url = :image_url WHERE id = :id";
+                $sql = "UPDATE drivers SET name = :name,surname = :surname, team = :team, points = :points, position = :position, image_url = :image_url, nationality = :nationality, number = :number WHERE id = :id";
                 $stmt = $conn->prepare($sql);
                 $stmt->bindParam(':id', $data['id'], PDO::PARAM_INT);
             } else {
                 // Insert new driver
-                $sql = "INSERT INTO drivers (name,surname, team, points, position, image_url) VALUES (:name,:surname, :team, :points, :position, :image_url)";
+                $sql = "INSERT INTO drivers (name,surname, team, points, position, image_url, nationality, number) VALUES (:name,:surname, :team, :points, :position, :image_url, :nationality, :number)";
                 $stmt = $conn->prepare($sql);
             }
 
@@ -221,6 +223,8 @@ function handleDrivers($conn, $action, $data)
             $stmt->bindParam(':points', $points);
             $stmt->bindParam(':position', $position);
             $stmt->bindParam(':image_url', $image_url);
+            $stmt->bindParam(':nationality', $nationality);
+            $stmt->bindParam(':number', $number);
 
             // Execute the query
             if ($stmt->execute()) {
@@ -385,87 +389,89 @@ function handleConstructors($conn, $action, $data)
 // Handle Races operations
 function handleRaces($conn, $action, $data)
 {
+    // Mappa i parametri dal frontend Flutter
+    $name = isset($data['name']) ? htmlspecialchars(trim($data['name'])) : '';
+    $circuit = isset($data['circuit']) ? htmlspecialchars(trim($data['circuit'])) : '';
+    $date = isset($data['date']) ? $data['date'] : '';
+    $flag_url = isset($data['flagUrl']) ? htmlspecialchars(trim($data['flagUrl'])) : (isset($data['flag_url']) ? htmlspecialchars(trim($data['flag_url'])) : '');
+    $isPast = isset($data['isPast']) ? intval($data['isPast']) : 0;
+    // Per compatibilità, se manca country, metti stringa vuota
+    $country = isset($data['country']) ? htmlspecialchars(trim($data['country'])) : '';
+
     switch ($action) {
+        case 'add':
         case 'create':
-        case 'update':
-            if (!isset($data['name']) || !isset($data['circuit']) || !isset($data['date']) || !isset($data['country'])) {
+            if (empty($name) || empty($circuit) || empty($date)) {
                 http_response_code(400);
                 echo json_encode(['success' => false, 'error' => 'Missing required fields for race']);
                 exit();
             }
-
-            // Sanitize inputs
-            $name = htmlspecialchars(trim($data['name']));
-            $circuit = htmlspecialchars(trim($data['circuit']));
-            $date = $data['date'];
-            $country = htmlspecialchars(trim($data['country']));
-            $flag_url = isset($data['flag_url']) ? htmlspecialchars(trim($data['flag_url'])) : '';
-
-            // Check if we're updating an existing record or creating a new one
-            if (isset($data['id']) && $data['id'] > 0) {
-                // Update existing race
-                $sql = "UPDATE races SET name = :name, circuit = :circuit, date = :date, country = :country, flag_url = :flag_url WHERE id = :id";
-                $stmt = $conn->prepare($sql);
-                $stmt->bindParam(':id', $data['id'], PDO::PARAM_INT);
-            } else {
-                // Insert new race
-                $sql = "INSERT INTO races (name, circuit, date, country, flag_url) VALUES (:name, :circuit, :date, :country, :flag_url)";
-                $stmt = $conn->prepare($sql);
-            }
-
-            // Bind parameters
+            $sql = "INSERT INTO races (name, circuit, date, flag_url, isPast, country) VALUES (:name, :circuit, :date, :flag_url, :isPast, :country)";
+            $stmt = $conn->prepare($sql);
             $stmt->bindParam(':name', $name);
             $stmt->bindParam(':circuit', $circuit);
             $stmt->bindParam(':date', $date);
-            $stmt->bindParam(':country', $country);
             $stmt->bindParam(':flag_url', $flag_url);
-
-            // Execute the query
+            $stmt->bindParam(':isPast', $isPast);
+            $stmt->bindParam(':country', $country);
             if ($stmt->execute()) {
-                // Get the ID of the inserted/updated race
-                $race_id = isset($data['id']) ? $data['id'] : $conn->lastInsertId();
-
-                // Return success response
+                $race_id = $conn->lastInsertId();
                 echo json_encode([
                     'success' => true,
-                    'message' => 'Race ' . (isset($data['id']) ? 'updated' : 'added') . ' successfully',
+                    'message' => 'Race added successfully',
                     'id' => $race_id
                 ]);
             } else {
                 throw new PDOException("Failed to add race");
             }
             break;
-
+        case 'edit':
+        case 'update':
+            if (!isset($data['id']) || empty($name) || empty($circuit) || empty($date)) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'error' => 'Missing required fields for race update']);
+                exit();
+            }
+            $id = intval($data['id']);
+            $sql = "UPDATE races SET name = :name, circuit = :circuit, date = :date, flag_url = :flag_url, isPast = :isPast, country = :country WHERE id = :id";
+            $stmt = $conn->prepare($sql);
+            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+            $stmt->bindParam(':name', $name);
+            $stmt->bindParam(':circuit', $circuit);
+            $stmt->bindParam(':date', $date);
+            $stmt->bindParam(':flag_url', $flag_url);
+            $stmt->bindParam(':isPast', $isPast);
+            $stmt->bindParam(':country', $country);
+            if ($stmt->execute()) {
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Race updated successfully',
+                    'id' => $id
+                ]);
+            } else {
+                throw new PDOException("Failed to update race");
+            }
+            break;
         case 'delete':
             if (!isset($data['id'])) {
                 http_response_code(400);
                 echo json_encode(['success' => false, 'error' => 'Missing ID for delete operation']);
                 exit();
             }
-
-            // Sanitize input
             $id = intval($data['id']);
-
-            // Check if the race exists
             $check_sql = "SELECT id FROM races WHERE id = :id";
             $check_stmt = $conn->prepare($check_sql);
             $check_stmt->bindParam(':id', $id, PDO::PARAM_INT);
             $check_stmt->execute();
-
             if ($check_stmt->rowCount() === 0) {
                 http_response_code(404);
                 echo json_encode(['success' => false, 'error' => 'Race non trovata']);
                 exit();
             }
-
-            // Delete the race
             $sql = "DELETE FROM races WHERE id = :id";
             $stmt = $conn->prepare($sql);
             $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-
-            // Execute the query
             if ($stmt->execute()) {
-                // Return success response
                 echo json_encode([
                     'success' => true,
                     'message' => 'Race eliminata con successo'
@@ -474,7 +480,6 @@ function handleRaces($conn, $action, $data)
                 throw new PDOException("Impossibile eliminare la race");
             }
             break;
-
         default:
             http_response_code(400);
             echo json_encode(['success' => false, 'error' => 'Invalid action for races']);

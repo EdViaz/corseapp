@@ -32,6 +32,7 @@ class _UserScreenState extends State<UserScreen> with SingleTickerProviderStateM
   List<Driver> _favoriteDrivers = [];
   List<Comment> _userComments = [];
   List<Driver> _allDrivers = [];
+  List<News> _allNews = [];
   
   @override
   void initState() {
@@ -82,40 +83,42 @@ class _UserScreenState extends State<UserScreen> with SingleTickerProviderStateM
       _isLoading = true;
       _errorMessage = '';
     });
-    
     try {
       // Carica tutti i piloti
       final drivers = await _apiService.getDriverStandings();
-      
       // Ottieni gli ID dei piloti preferiti
       final favoriteIds = await _preferencesService.getFavoriteDrivers();
-      
       // Filtra i piloti preferiti
       final favorites = drivers.where((driver) => favoriteIds.contains(driver.id)).toList();
-      
+      // Carica tutte le notizie
+      List<News> newsList = [];
+      try {
+        newsList = await _apiService.getNews();
+      } catch (e) {
+        print('Errore nel caricamento delle notizie: \\${e.toString()}');
+      }
       // Carica i commenti dell'utente
       List<Comment> comments = [];
       if (_currentUser != null) {
         try {
           comments = await _apiService.getUserComments(_currentUser!.id);
         } catch (e) {
-          print('Errore nel caricamento dei commenti: ${e.toString()}');
-          // Non blocchiamo il caricamento degli altri dati se i commenti falliscono
+          print('Errore nel caricamento dei commenti: \\${e.toString()}');
         }
       }
-      
       if (mounted) {
         setState(() {
           _allDrivers = drivers;
           _favoriteDrivers = favorites;
           _userComments = comments;
+          _allNews = newsList;
           _isLoading = false;
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = 'Errore durante il caricamento dei dati: ${e.toString()}';
+          _errorMessage = 'Errore durante il caricamento dei dati: \\${e.toString()}';
           _isLoading = false;
         });
       }
@@ -247,8 +250,14 @@ class _UserScreenState extends State<UserScreen> with SingleTickerProviderStateM
           child: TabBarView(
             controller: _tabController,
             children: [
-              _buildFavoriteDriversTab(),
-              _buildUserCommentsTab(),
+              RefreshIndicator(
+                onRefresh: _loadUserData,
+                child: _buildFavoriteDriversTab(),
+              ),
+              RefreshIndicator(
+                onRefresh: _loadUserData,
+                child: _buildUserCommentsTab(),
+              ),
             ],
           ),
         ),
@@ -272,9 +281,9 @@ class _UserScreenState extends State<UserScreen> with SingleTickerProviderStateM
       itemBuilder: (context, index) {
         final driver = _favoriteDrivers[index];
         return ListTile(
-          leading: driver.imageUrl != null && driver.imageUrl!.isNotEmpty
+          leading: driver.imageUrl.isNotEmpty
               ? CircleAvatar(
-                  backgroundImage: NetworkImage(driver.imageUrl!),
+                  backgroundImage: NetworkImage(driver.imageUrl),
                 )
               : const CircleAvatar(child: Icon(Icons.person)),
           title: Text('${driver.name} ${driver.surname}'),
@@ -303,23 +312,50 @@ class _UserScreenState extends State<UserScreen> with SingleTickerProviderStateM
       itemCount: _userComments.length,
       itemBuilder: (context, index) {
         final comment = _userComments[index];
-        return Card(
-          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          child: Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  comment.content,
-                  style: const TextStyle(fontSize: 16),
+        return InkWell(
+          onTap: () {
+            final news = _allNews.firstWhere(
+              (n) => n.id == comment.newsId,
+              orElse: () => News(
+                id: 0,
+                title: 'Notizia non trovata',
+                content: '',
+                imageUrl: '',
+                publishDate: DateTime.now(),
+                additionalImages: [],
+              ),
+            );
+            if (news.id != 0) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => NewsDetailScreen(news: news),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Pubblicato il ${comment.date.day}/${comment.date.month}/${comment.date.year}',
-                  style: const TextStyle(color: Colors.grey, fontSize: 12),
-                ),
-              ],
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Notizia non trovata')),
+              );
+            }
+          },
+          child: Card(
+            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    comment.content,
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Pubblicato il \\${comment.date.day}/\\${comment.date.month}/\\${comment.date.year}',
+                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
+                ],
+              ),
             ),
           ),
         );
