@@ -5,6 +5,7 @@ class PreferencesService {
   static const String _favoritesKey = 'favorite_drivers';
   static const String _primaryColorKey = 'primary_color';
   static const String _fontSizeKey = 'font_size';
+  static const String _welcomeKey = 'welcome_shown';
 
   // Singleton pattern
   static final PreferencesService _instance = PreferencesService._internal();
@@ -15,16 +16,6 @@ class PreferencesService {
 
   PreferencesService._internal();
 
-  // Gestione tema scuro/chiaro
-  Future<bool> isDarkMode() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_darkModeKey) ?? false;
-  }
-
-  Future<void> setDarkMode(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_darkModeKey, value);
-  }
 
   // Gestione piloti preferiti
   Future<List<int>> getFavoriteDrivers() async {
@@ -86,6 +77,17 @@ class PreferencesService {
     await prefs.setDouble(_fontSizeKey, scale);
   }
 
+  // Gestione schermata di benvenuto
+  Future<bool> isWelcomeShown() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_welcomeKey) ?? false;
+  }
+
+  Future<void> setWelcomeShown(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_welcomeKey, value);
+  }
+
   // Resetta tutte le preferenze
   Future<void> resetAllPreferences() async {
     final prefs = await SharedPreferences.getInstance();
@@ -93,5 +95,6 @@ class PreferencesService {
     await prefs.remove(_favoritesKey);
     await prefs.remove(_primaryColorKey);
     await prefs.remove(_fontSizeKey);
+    await prefs.remove(_welcomeKey);
   }
 }

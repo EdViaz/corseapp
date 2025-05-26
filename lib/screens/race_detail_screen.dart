@@ -93,7 +93,7 @@ class _RaceDetailScreenState extends State<RaceDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.race.name),
-        backgroundColor: Colors.red,
+        backgroundColor: Colors.red.shade700,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())

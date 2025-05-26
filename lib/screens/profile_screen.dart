@@ -19,7 +19,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final AuthService _authService = AuthService();
   final ApiService _apiService = ApiService();
   final PreferencesService _preferencesService = PreferencesService();
-  
+
   User? _currentUser;
   bool _isLoading = true;
   List<Driver> _favoriteDrivers = [];
@@ -27,13 +27,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   List<Comment> _userComments = [];
   List<News> _allNews = []; // Aggiunto per tenere traccia di tutte le news
   List<Constructor> _constructors = [];
-  
+
   @override
   void initState() {
     super.initState();
     _loadUserData();
   }
-  
+
   Future<void> _loadUserData() async {
     if (mounted) {
       setState(() {
@@ -45,7 +45,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final drivers = await _apiService.getDriverStandings();
       final constructors = await _apiService.getConstructorStandings();
       final favoriteIds = await _preferencesService.getFavoriteDrivers();
-      final favorites = drivers.where((driver) => favoriteIds.contains(driver.id)).toList();
+      final favorites =
+          drivers.where((driver) => favoriteIds.contains(driver.id)).toList();
       List<Comment> comments = [];
       if (user != null) {
         try {
@@ -78,14 +79,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     }
   }
-  
+
   Future<void> _toggleFavorite(Driver driver) async {
     final isFavorite = _favoriteDrivers.any((d) => d.id == driver.id);
-    
+
     setState(() {
       _isLoading = true;
     });
-    
+
     try {
       if (isFavorite) {
         // Rimuovi dai preferiti
@@ -103,7 +104,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Errore nell\'aggiornamento dei preferiti: $e')),
+          SnackBar(
+            content: Text('Errore nell\'aggiornamento dei preferiti: $e'),
+          ),
         );
       }
     } finally {
@@ -114,14 +117,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profilo Utente'),
         titleTextStyle: const TextStyle(color: Colors.white),
-        backgroundColor: Colors.red,
+        backgroundColor: Colors.red.shade700,
       ),
       body: RefreshIndicator(
         onRefresh: _loadUserData,
@@ -136,21 +139,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
-  
+
   // Mostra un indicatore di caricamento sovrapposto
   Widget _buildLoadingIndicator() {
     return _isLoading
         ? Container(
-            color: Colors.black.withOpacity(0.3),
-            child: const Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
-              ),
+          color: Colors.black.withOpacity(0.3),
+          child: const Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
             ),
-          )
+          ),
+        )
         : const SizedBox.shrink();
   }
-  
+
   Widget _buildProfileContent() {
     if (_currentUser == null) {
       return Center(
@@ -173,84 +176,94 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   }
                 });
               },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade700),
               child: const Text('Registrati/accedi'),
             ),
           ],
         ),
       );
     }
-    
-    return SingleChildScrollView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Informazioni utente
-            Card(
-              elevation: 4,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const CircleAvatar(
-                          radius: 30,
-                          backgroundColor: Colors.red,
-                          child: Icon(Icons.person, size: 40, color: Colors.white),
-                        ),
-                        const SizedBox(width: 16),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _currentUser!.username,
-                              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 400),
+      child: SingleChildScrollView(
+        key: ValueKey(_currentUser?.id ?? 0),
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Informazioni utente
+              Card(
+                elevation: 4,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 30,
+                            backgroundColor: Colors.red.shade700,
+                            child: const Icon(
+                              Icons.person,
+                              size: 40,
+                              color: Colors.white,
                             ),
-                            const Text('Appassionato di Formula 1'),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () async {
-                        await _authService.logout();
-                        if (mounted) {
-                          setState(() {
-                            _currentUser = null;
-                            _favoriteDrivers = [];
-                          });
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Logout effettuato con successo')),
-                          );
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                      child: const Text('Logout'),
-                    ),
-                  ],
+                          ),
+                          const SizedBox(width: 16),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _currentUser!.username,
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const Text('Appassionato di Formula 1'),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () async {
+                          await _authService.logout();
+                          if (mounted) {
+                            setState(() {
+                              _currentUser = null;
+                              _favoriteDrivers = [];
+                            });
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Logout effettuato con successo'),
+                              ),
+                            );
+                          }
+                        },
+                        child: const Text('Logout'),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            
 
+              const SizedBox(height: 24),
 
-            
-            const SizedBox(height: 24),
-            
-            // Piloti preferiti
-            const Text(
-              'I tuoi piloti preferiti',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            _favoriteDrivers.isEmpty
-                ? const Card(
+              // Piloti preferiti
+              const Text(
+                'I tuoi piloti preferiti',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              _favoriteDrivers.isEmpty
+                  ? const Card(
                     elevation: 2,
                     child: Padding(
                       padding: EdgeInsets.all(16.0),
@@ -260,7 +273,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                   )
-                : ListView.builder(
+                  : ListView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: _favoriteDrivers.length,
@@ -272,18 +285,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         child: ListTile(
                           leading: CircleAvatar(
                             backgroundImage: NetworkImage(driver.imageUrl),
-                            onBackgroundImageError: (_, __) => const Icon(Icons.error),
+                            onBackgroundImageError:
+                                (_, __) => const Icon(Icons.error),
                           ),
                           title: Text('${driver.name} ${driver.surname}'),
-                          subtitle: Text(_constructors.firstWhere(
-                            (c) => c.id == driver.teamId,
-                            orElse: () => Constructor(id: 0, name: '-', points: 0, logoUrl: '', position: 0),
-                          ).name),
+                          subtitle: Text(
+                            _constructors
+                                .firstWhere(
+                                  (c) => c.id == driver.teamId,
+                                  orElse:
+                                      () => Constructor(
+                                        id: 0,
+                                        name: '-',
+                                        points: 0,
+                                        logoUrl: '',
+                                        position: 0,
+                                      ),
+                                )
+                                .name,
+                          ),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               IconButton(
-                                icon: const Icon(Icons.favorite, color: Colors.red),
+                                icon: const Icon(
+                                  Icons.favorite,
+                                  color: Colors.red,
+                                ),
                                 onPressed: () => _toggleFavorite(driver),
                               ),
                               IconButton(
@@ -292,7 +320,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   final result = await Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => DriverDetailScreen(driverId: driver.id),
+                                      builder:
+                                          (context) => DriverDetailScreen(
+                                            driverId: driver.id,
+                                          ),
                                     ),
                                   );
                                   if (result == true && mounted) {
@@ -306,17 +337,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       );
                     },
                   ),
-            
-            const SizedBox(height: 24),
-            
-            // I tuoi commenti
-            const Text(
-              'I tuoi commenti',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            _userComments.isEmpty
-                ? const Card(
+
+              const SizedBox(height: 24),
+
+              // I tuoi commenti
+              const Text(
+                'I tuoi commenti',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              _userComments.isEmpty
+                  ? const Card(
                     elevation: 2,
                     child: Padding(
                       padding: EdgeInsets.all(16.0),
@@ -326,7 +357,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                   )
-                : ListView.builder(
+                  : ListView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: _userComments.length,
@@ -337,33 +368,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           // Cerca la news già caricata
                           final news = _allNews.firstWhere(
                             (n) => n.id == comment.newsId,
-                            orElse: () => News(
-                              id: 0,
-                              title: 'Notizia non trovata',
-                              content: '',
-                              imageUrl: '',
-                              publishDate: DateTime.now(),
-                              additionalImages: [],
-                            ),
+                            orElse:
+                                () => News(
+                                  id: 0,
+                                  title: 'Notizia non trovata',
+                                  content: '',
+                                  imageUrl: '',
+                                  publishDate: DateTime.now(),
+                                  additionalImages: [],
+                                ),
                           );
                           if (news.id != 0) {
                             if (!mounted) return;
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => NewsDetailScreen(news: news),
+                                builder:
+                                    (context) => NewsDetailScreen(news: news),
                               ),
                             );
                           } else {
                             // Se non trovata, prova a caricarla da API
                             try {
-                              final fetchedNews = await _apiService.getNewsById(comment.newsId);
+                              final fetchedNews = await _apiService.getNewsById(
+                                comment.newsId,
+                              );
                               if (!mounted) return;
                               if (fetchedNews != null) {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => NewsDetailScreen(news: fetchedNews),
+                                    builder:
+                                        (context) =>
+                                            NewsDetailScreen(news: fetchedNews),
                                   ),
                                 );
                               } else {
@@ -378,7 +415,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               if (!mounted) return;
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text('Errore nel caricamento della notizia: $e'),
+                                  content: Text(
+                                    'Errore nel caricamento della notizia: $e',
+                                  ),
                                   backgroundColor: Colors.orange,
                                 ),
                               );
@@ -394,33 +433,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Expanded(
                                       child: Row(
                                         children: [
                                           Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 6,
+                                              vertical: 2,
+                                            ),
                                             decoration: BoxDecoration(
-                                              color: Colors.red.shade800,
-                                              borderRadius: BorderRadius.circular(4),
+                                              color: Colors.red.shade700,
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
                                             ),
                                             child: Text(
                                               '#${comment.newsId}',
-                                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white),
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 12,
+                                                color: Colors.white,
+                                              ),
                                             ),
                                           ),
                                           const SizedBox(width: 8),
                                           const Text(
-                                            'Commento', 
-                                            style: TextStyle(fontWeight: FontWeight.bold),
+                                            'Commento',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           ),
                                         ],
                                       ),
                                     ),
                                     Text(
                                       '${comment.date.day}/${comment.date.month}/${comment.date.year}',
-                                      style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                      style: const TextStyle(
+                                        color: Colors.grey,
+                                        fontSize: 12,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -433,67 +486,87 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       );
                     },
                   ),
-            
-            const SizedBox(height: 24),
-            
-            // Tutti i piloti
-            const Text(
-              'Tutti i piloti',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _allDrivers.length,
-              itemBuilder: (context, index) {
-                final driver = _allDrivers[index];
-                final isFavorite = _favoriteDrivers.any((d) => d.id == driver.id);
-                
-                return Card(
-                  elevation: 2,
-                  margin: const EdgeInsets.symmetric(vertical: 8),
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundImage: NetworkImage(driver.imageUrl),
-                      onBackgroundImageError: (_, __) => const Icon(Icons.error),
-                    ),
-                    title: Text('${driver.name} ${driver.surname}'),
-                    subtitle: Text(_constructors.firstWhere(
-                      (c) => c.id == driver.teamId,
-                      orElse: () => Constructor(id: 0, name: '-', points: 0, logoUrl: '', position: 0),
-                    ).name),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: Icon(
-                            isFavorite ? Icons.favorite : Icons.favorite_border,
-                            color: isFavorite ? Colors.red : null,
+
+              const SizedBox(height: 24),
+
+              // Tutti i piloti
+              const Text(
+                'Tutti i piloti',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _allDrivers.length,
+                itemBuilder: (context, index) {
+                  final driver = _allDrivers[index];
+                  final isFavorite = _favoriteDrivers.any(
+                    (d) => d.id == driver.id,
+                  );
+
+                  return Card(
+                    elevation: 2,
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    child: ListTile(
+                      leading: CircleAvatar(
+                        backgroundImage: NetworkImage(driver.imageUrl),
+                        onBackgroundImageError:
+                            (_, __) => const Icon(Icons.error),
+                      ),
+                      title: Text('${driver.name} ${driver.surname}'),
+                      subtitle: Text(
+                        _constructors
+                            .firstWhere(
+                              (c) => c.id == driver.teamId,
+                              orElse:
+                                  () => Constructor(
+                                    id: 0,
+                                    name: '-',
+                                    points: 0,
+                                    logoUrl: '',
+                                    position: 0,
+                                  ),
+                            )
+                            .name,
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: Icon(
+                              isFavorite
+                                  ? Icons.favorite
+                                  : Icons.favorite_border,
+                              color: isFavorite ? Colors.red.shade700 : null,
+                            ),
+                            onPressed: () => _toggleFavorite(driver),
                           ),
-                          onPressed: () => _toggleFavorite(driver),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.arrow_forward),
-                          onPressed: () async {
-                            final result = await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => DriverDetailScreen(driverId: driver.id),
-                              ),
-                            );
-                            if (result == true && mounted) {
-                              _loadUserData();
-                            }
-                          },
-                        ),
-                      ],
+                          IconButton(
+                            icon: const Icon(Icons.arrow_forward),
+                            onPressed: () async {
+                              final result = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) => DriverDetailScreen(
+                                        driverId: driver.id,
+                                      ),
+                                ),
+                              );
+                              if (result == true && mounted) {
+                                _loadUserData();
+                              }
+                            },
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              },
-            ),
-          ],
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );

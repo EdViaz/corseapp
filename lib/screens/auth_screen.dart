@@ -104,7 +104,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     return Scaffold(
       appBar: AppBar(
         title: const Text('Accedi o Registrati'),
-        backgroundColor: Colors.red,
+        backgroundColor: Colors.red.shade700,
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
@@ -168,7 +168,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                   ElevatedButton(
                     onPressed: _isLoading ? null : _login,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
+                      backgroundColor: Colors.red.shade700,
                       padding: const EdgeInsets.symmetric(vertical: 16.0),
                     ),
                     child: _isLoading
@@ -251,7 +251,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
                   ElevatedButton(
                     onPressed: _isLoading ? null : _register,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
+                      backgroundColor: Colors.red.shade700,
                       padding: const EdgeInsets.symmetric(vertical: 16.0),
                     ),
                     child: _isLoading

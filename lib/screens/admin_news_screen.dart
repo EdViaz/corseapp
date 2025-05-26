@@ -108,7 +108,7 @@ class _AdminNewsScreenState extends State<AdminNewsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Admin - Add News'),
-        backgroundColor: Colors.red,
+        backgroundColor: Colors.red.shade700,
         foregroundColor: Colors.white,
         actions: [
           IconButton(
@@ -182,7 +182,7 @@ class _AdminNewsScreenState extends State<AdminNewsScreen> {
                   child: Text(
                     _message,
                     style: TextStyle(
-                      color: _isSuccess ? Colors.green : Colors.red,
+                      color: _isSuccess ? Colors.green : Colors.red.shade700,
                       fontWeight: FontWeight.bold,
                     ),
                     textAlign: TextAlign.center,
@@ -191,7 +191,7 @@ class _AdminNewsScreenState extends State<AdminNewsScreen> {
               ElevatedButton(
                 onPressed: _isLoading ? null : _submitNews,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
+                  backgroundColor: Colors.red.shade700,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),

@@ -79,7 +79,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Admin Login'),
-        backgroundColor: Colors.red,
+        backgroundColor: Colors.red.shade700,
         foregroundColor: Colors.white,
       ),
       body: Padding(
@@ -139,7 +139,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
               ElevatedButton(
                 onPressed: _isLoading ? null : _login,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
+                  backgroundColor: Colors.red.shade700,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),

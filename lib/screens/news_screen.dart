@@ -37,23 +37,21 @@ class _NewsScreenState extends State<NewsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-
-      // Corpo della schermata che mostra l'elenco delle notizie
       body: FutureBuilder<List<News>>(
         future: _newsFuture,
         builder: (context, snapshot) {
           // Mostra indicatore di caricamento mentre i dati vengono recuperati
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
-          } 
+          }
           // Gestisce eventuali errori durante il recupero dei dati
           else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
-          } 
+          }
           // Gestisce il caso in cui non ci siano notizie disponibili
           else if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return const Center(child: Text('No news available'));
-          } 
+          }
           // Costruisce la lista delle notizie quando i dati sono disponibili
           else {
             return RefreshIndicator(
@@ -68,39 +66,66 @@ class _NewsScreenState extends State<NewsScreen> {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                          builder: (context) => NewsDetailScreen(news: news),
+                        PageRouteBuilder(
+                          pageBuilder:
+                              (context, animation, secondaryAnimation) =>
+                                  NewsDetailScreen(news: news),
+                          transitionsBuilder: (
+                            context,
+                            animation,
+                            secondaryAnimation,
+                            child,
+                          ) {
+                            return FadeTransition(
+                              opacity: animation,
+                              child: child,
+                            );
+                          },
                         ),
                       );
                     },
                     child: Card(
-                      margin: const EdgeInsets.all(8.0),
+                      margin: const EdgeInsets.all(12.0),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      elevation: 6,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           if (news.imageUrl.isNotEmpty)
-                            Image.network(
-                              news.imageUrl,
-                              height: 200,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Container(
+                            Hero(
+                              tag: 'news-image-${news.id}',
+                              child: ClipRRect(
+                                borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(18),
+                                ),
+                                child: Image.network(
+                                  news.imageUrl,
                                   height: 200,
-                                  color: Colors.grey[300],
-                                  child: const Center(child: Icon(Icons.error)),
-                                );
-                              },
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      height: 200,
+                                      color: Colors.grey[300],
+                                      child: const Center(
+                                        child: Icon(Icons.error),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
                             ),
                           Padding(
-                            padding: const EdgeInsets.all(12.0),
+                            padding: const EdgeInsets.all(16.0),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   news.title,
                                   style: const TextStyle(
-                                    fontSize: 18,
+                                    fontSize: 20,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -109,6 +134,7 @@ class _NewsScreenState extends State<NewsScreen> {
                                   news.content,
                                   maxLines: 3,
                                   overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(fontSize: 15),
                                 ),
                                 const SizedBox(height: 8),
                                 Text(

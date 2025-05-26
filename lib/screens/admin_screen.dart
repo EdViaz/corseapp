@@ -59,7 +59,7 @@ class _AdminScreenState extends State<AdminScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('Pannello Amministratore'),
-        backgroundColor: Colors.red,
+        backgroundColor: Colors.red.shade700,
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
@@ -101,7 +101,7 @@ class _AdminScreenState extends State<AdminScreen>
             _showRaceForm();
           }
         },
-        backgroundColor: Colors.red,
+        backgroundColor: Colors.red.shade700,
         child: const Icon(Icons.add),
       ),
     );
@@ -579,7 +579,7 @@ class _AdminScreenState extends State<AdminScreen>
                   onConfirm();
                 },
                 child: const Text('Elimina'),
-                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                style: TextButton.styleFrom(foregroundColor: Colors.red.shade700),
               ),
             ],
           ),

@@ -14,7 +14,8 @@ class RacesScreen extends StatefulWidget {
   State<RacesScreen> createState() => _RacesScreenState();
 }
 
-class _RacesScreenState extends State<RacesScreen> with SingleTickerProviderStateMixin {
+class _RacesScreenState extends State<RacesScreen>
+    with SingleTickerProviderStateMixin {
   // Servizio per le chiamate API
   final ApiService _apiService = ApiService();
   // Future per i dati delle gare
@@ -49,13 +50,10 @@ class _RacesScreenState extends State<RacesScreen> with SingleTickerProviderStat
     return Scaffold(
       // AppBar con TabBar per navigare tra gare future e passate
       appBar: AppBar(
-        backgroundColor: Colors.red,
+        backgroundColor: Colors.red.shade700,
         bottom: TabBar(
           controller: _tabController,
-          tabs: const [
-            Tab(text: 'Prossime'),
-            Tab(text: 'Passate'),
-          ],
+          tabs: const [Tab(text: 'Prossime'), Tab(text: 'Passate')],
           indicatorColor: Colors.white,
           labelColor: Colors.white,
         ),
@@ -73,88 +71,142 @@ class _RacesScreenState extends State<RacesScreen> with SingleTickerProviderStat
             final races = snapshot.data!;
             final upcomingRaces = races.where((race) => !race.isPast).toList();
             final pastRaces = races.where((race) => race.isPast).toList();
-            
             return TabBarView(
               controller: _tabController,
               children: [
                 // Upcoming Races Tab
                 RefreshIndicator(
                   onRefresh: _refreshRaces,
-                  child: _buildRacesList(upcomingRaces, isUpcoming: true),
+                  child: ListView.builder(
+                    itemCount: upcomingRaces.length,
+                    itemBuilder: (context, index) {
+                      final race = upcomingRaces[index];
+                      return Card(
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 16.0,
+                          vertical: 8.0,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        elevation: 6,
+                        child: ListTile(
+                          leading:
+                              race.flagUrl.isNotEmpty
+                                  ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.network(
+                                      race.flagUrl,
+                                      width: 40,
+                                      height: 40,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  )
+                                  : const Icon(Icons.flag, size: 40),
+                          title: Text(
+                            race.name,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          subtitle: Text(race.circuit),
+                          trailing: const Icon(
+                            Icons.arrow_forward_ios,
+                            size: 18,
+                          ),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              PageRouteBuilder(
+                                pageBuilder:
+                                    (context, animation, secondaryAnimation) =>
+                                        RaceDetailScreen(race: race),
+                                transitionsBuilder: (
+                                  context,
+                                  animation,
+                                  secondaryAnimation,
+                                  child,
+                                ) {
+                                  return FadeTransition(
+                                    opacity: animation,
+                                    child: child,
+                                  );
+                                },
+                              ),
+                            );
+                          },
+                        ),
+                      );
+                    },
+                  ),
                 ),
-                
                 // Past Races Tab
                 RefreshIndicator(
                   onRefresh: _refreshRaces,
-                  child: _buildRacesList(pastRaces, isUpcoming: false),
+                  child: ListView.builder(
+                    itemCount: pastRaces.length,
+                    itemBuilder: (context, index) {
+                      final race = pastRaces[index];
+                      return Card(
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 16.0,
+                          vertical: 8.0,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        elevation: 6,
+                        child: ListTile(
+                          leading:
+                              race.flagUrl.isNotEmpty
+                                  ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.network(
+                                      race.flagUrl,
+                                      width: 40,
+                                      height: 40,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  )
+                                  : const Icon(Icons.flag, size: 40),
+                          title: Text(
+                            race.name,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          subtitle: Text(race.circuit),
+                          trailing: const Icon(
+                            Icons.arrow_forward_ios,
+                            size: 18,
+                          ),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              PageRouteBuilder(
+                                pageBuilder:
+                                    (context, animation, secondaryAnimation) =>
+                                        RaceDetailScreen(race: race),
+                                transitionsBuilder: (
+                                  context,
+                                  animation,
+                                  secondaryAnimation,
+                                  child,
+                                ) {
+                                  return FadeTransition(
+                                    opacity: animation,
+                                    child: child,
+                                  );
+                                },
+                              ),
+                            );
+                          },
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ],
             );
           }
         },
       ),
-    );
-  }
-
-  Widget _buildRacesList(List<Race> races, {required bool isUpcoming}) {
-    if (races.isEmpty) {
-      return Center(
-        child: Text(isUpcoming ? 'Nessuna gara futura disponibile' : 'Nessuna gara passata disponibile'),
-      );
-    }
-    
-    return ListView.builder(
-      itemCount: races.length,
-      itemBuilder: (context, index) {
-        final race = races[index];
-        return Card(
-          margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-          child: ListTile(
-            leading: race.flagUrl.isNotEmpty
-                ? ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: Image.network(
-                      race.flagUrl,
-                      width: 48,
-                      height: 32,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Icon(Icons.flag, size: 40);
-                      },
-                    ),
-                  )
-                : const Icon(Icons.flag, size: 40),
-            title: Text(
-              race.name,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            subtitle: Text(race.circuit),
-            trailing: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  '${race.date.day}/${race.date.month}/${race.date.year}',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: isUpcoming ? Colors.green : Colors.grey,
-                  ),
-                ),
-                Text(race.country),
-              ],
-            ),
-            onTap: () {
-              // Naviga alla schermata di dettaglio gara
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => RaceDetailScreen(race: race),
-                ),
-              );
-            },
-          ),
-        );
-      },
     );
   }
 }

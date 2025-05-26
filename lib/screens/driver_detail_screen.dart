@@ -76,7 +76,7 @@ class _DriverDetailScreenState extends State<DriverDetailScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dettagli Pilota'),
-        backgroundColor: Colors.red,
+        backgroundColor: Colors.red.shade700,
         // RIMOSSO: pulsante dark mode
         // actions: [
         //   IconButton(
@@ -91,7 +91,7 @@ class _DriverDetailScreenState extends State<DriverDetailScreen>
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
-            return Center(child: Text('Errore: [${snapshot.error}'));
+            return Center(child: Text('Errore: [${snapshot.error}]'));
           } else if (!snapshot.hasData) {
             return const Center(child: Text('Nessun dato disponibile'));
           }
@@ -102,19 +102,13 @@ class _DriverDetailScreenState extends State<DriverDetailScreen>
               _buildDriverHeader(driver),
               TabBar(
                 controller: _tabController,
-                labelColor: Colors.red,
-                tabs: const [
-                  Tab(text: 'Profilo'),
-                  Tab(text: 'Statistiche'),
-                ],
+                labelColor: Colors.red.shade700,
+                tabs: const [Tab(text: 'Profilo'), Tab(text: 'Statistiche')],
               ),
               Expanded(
                 child: TabBarView(
                   controller: _tabController,
-                  children: [
-                    _buildProfileTab(driver),
-                    _buildStatsTab(driver),
-                  ],
+                  children: [_buildProfileTab(driver), _buildStatsTab(driver)],
                 ),
               ),
             ],
@@ -132,7 +126,14 @@ class _DriverDetailScreenState extends State<DriverDetailScreen>
         if (snapshot.hasData) {
           final team = snapshot.data!.firstWhere(
             (c) => c.id == driver.teamId,
-            orElse: () => Constructor(id: 0, name: '-', points: 0, logoUrl: '', position: 0),
+            orElse:
+                () => Constructor(
+                  id: 0,
+                  name: '-',
+                  points: 0,
+                  logoUrl: '',
+                  position: 0,
+                ),
           );
           teamName = team.name;
         } else if (snapshot.connectionState == ConnectionState.waiting) {
@@ -141,21 +142,38 @@ class _DriverDetailScreenState extends State<DriverDetailScreen>
           teamName = '-';
         }
         return Container(
-          padding: const EdgeInsets.all(16.0),
-          color: Colors.red,
+          decoration: BoxDecoration(
+            color: Colors.red.shade700,
+            borderRadius: const BorderRadius.vertical(
+              bottom: Radius.circular(24),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.red.withOpacity(0.12),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
           child: Row(
             children: [
-              CircleAvatar(
-                radius: 40,
-                backgroundImage: NetworkImage(driver.imageUrl),
+              Hero(
+                tag: 'driver-image-${driver.id}',
+                child: CircleAvatar(
+                  radius: 38,
+                  backgroundImage: NetworkImage(driver.imageUrl),
+                  backgroundColor: Colors.white,
+                  onBackgroundImageError: (_, __) {},
+                ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 24),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "${driver.name} ${driver.surname}",
+                      '${driver.name} ${driver.surname}',
                       style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -164,22 +182,35 @@ class _DriverDetailScreenState extends State<DriverDetailScreen>
                     ),
                     Text(
                       teamName,
-                      style: const TextStyle(fontSize: 18, color: Colors.white70),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        color: Colors.white70,
+                      ),
                     ),
                     Text(
                       'Posizione: ${driver.position} | Punti: ${driver.points}',
-                      style: const TextStyle(fontSize: 16, color: Colors.white70),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Colors.white70,
+                      ),
                     ),
                   ],
                 ),
               ),
-              IconButton(
-                icon: Icon(
-                  _isFavorite ? Icons.star : Icons.star_border,
-                  color: Colors.white,
-                  size: 30,
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 350),
+                transitionBuilder:
+                    (child, animation) =>
+                        ScaleTransition(scale: animation, child: child),
+                child: IconButton(
+                  key: ValueKey(_isFavorite),
+                  icon: Icon(
+                    _isFavorite ? Icons.star : Icons.star_border,
+                    color: Colors.white,
+                    size: 32,
+                  ),
+                  onPressed: _toggleFavorite,
                 ),
-                onPressed: _toggleFavorite,
               ),
             ],
           ),
@@ -196,7 +227,14 @@ class _DriverDetailScreenState extends State<DriverDetailScreen>
         if (snapshot.hasData) {
           final team = snapshot.data!.firstWhere(
             (c) => c.id == driver.teamId,
-            orElse: () => Constructor(id: 0, name: '-', points: 0, logoUrl: '', position: 0),
+            orElse:
+                () => Constructor(
+                  id: 0,
+                  name: '-',
+                  points: 0,
+                  logoUrl: '',
+                  position: 0,
+                ),
           );
           teamName = team.name;
         } else if (snapshot.connectionState == ConnectionState.waiting) {
@@ -218,7 +256,10 @@ class _DriverDetailScreenState extends State<DriverDetailScreen>
                     children: [
                       const Text(
                         'Informazioni Personali',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const Divider(),
                       _infoRow('Nazionalità', driver.nationality),
@@ -240,7 +281,10 @@ class _DriverDetailScreenState extends State<DriverDetailScreen>
                     children: [
                       const Text(
                         'Biografia',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const Divider(),
                       Text(driver.biography),
@@ -390,7 +434,7 @@ class _DriverDetailScreenState extends State<DriverDetailScreen>
                 child: Container(
                   height: 20,
                   decoration: BoxDecoration(
-                    color: Colors.red,
+                    color: Colors.red.shade700,
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),

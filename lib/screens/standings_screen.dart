@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/f1_models.dart';
 import '../services/api_service.dart';
 import 'driver_detail_screen.dart';
+import 'constructor_detail_screen.dart';
 
 // Schermata che mostra le classifiche di Formula 1
 // Contiene due tab: una per i piloti e una per i costruttori
@@ -45,10 +46,7 @@ class _StandingsScreenState extends State<StandingsScreen>
       _driversFuture = _apiService.getDriverStandings();
       _constructorsFuture = _apiService.getConstructorStandings();
     });
-    await Future.wait([
-      _driversFuture,
-      _constructorsFuture,
-    ]);
+    await Future.wait([_driversFuture, _constructorsFuture]);
   }
 
   @override
@@ -56,7 +54,7 @@ class _StandingsScreenState extends State<StandingsScreen>
     return Scaffold(
       // AppBar con titolo e TabBar per navigare tra le classifiche
       appBar: AppBar(
-        backgroundColor: Colors.red,
+        backgroundColor: Colors.red.shade700,
         bottom: TabBar(
           controller: _tabController,
           tabs: const [Tab(text: 'Piloti'), Tab(text: 'Team')],
@@ -68,8 +66,7 @@ class _StandingsScreenState extends State<StandingsScreen>
       body: TabBarView(
         controller: _tabController,
         children: [
-          // Tab Piloti - Mostra la classifica piloti
-          // FutureBuilder gestisce lo stato di caricamento dei dati dei piloti
+          // Tab Piloti
           RefreshIndicator(
             onRefresh: _refreshStandings,
             child: FutureBuilder<List<Driver>>(
@@ -85,72 +82,62 @@ class _StandingsScreenState extends State<StandingsScreen>
                 }
                 // Gestisce il caso in cui non ci siano dati disponibili
                 else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(
-                    child: Text('Non ci sono dati disponibili'),
-                  );
+                  return const Center(child: Text('Nessun pilota disponibile'));
                 }
                 // Costruisce la lista dei piloti quando i dati sono disponibili
                 else {
-                  return FutureBuilder<List<Constructor>>(
-                    future: _constructorsFuture,
-                    builder: (context, teamSnapshot) {
-                      final constructors = teamSnapshot.data ?? [];
-                      return ListView.builder(
-                        itemCount: snapshot.data!.length,
-                        itemBuilder: (context, index) {
-                          final driver = snapshot.data![index];
-                          final team = constructors.firstWhere(
-                            (c) => c.id == driver.teamId,
-                            orElse: () => Constructor(id: 0, name: '-', points: 0, logoUrl: '', position: 0),
-                          );
-                          // Card per ogni pilota nella classifica
-                          return Card(
-                            margin: const EdgeInsets.symmetric(
-                              horizontal: 16.0,
-                              vertical: 8.0,
+                  return ListView.builder(
+                    itemCount: snapshot.data!.length,
+                    itemBuilder: (context, index) {
+                      final driver = snapshot.data![index];
+                      return Card(
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 16.0,
+                          vertical: 8.0,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        elevation: 6,
+                        child: ListTile(
+                          leading: Hero(
+                            tag: 'driver-image-${driver.id}',
+                            child: CircleAvatar(
+                              backgroundImage: NetworkImage(driver.imageUrl),
+                              backgroundColor: Colors.white,
                             ),
-                            // InkWell per rendere l'intera card cliccabile
-                            child: InkWell(
-                              // Naviga alla schermata di dettaglio quando si tocca un pilota
-                              onTap: () {
-                                Navigator.push(
+                          ),
+                          title: Text(
+                            '${driver.name} ${driver.surname}',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          subtitle: Text('Punti: ${driver.points}'),
+                          trailing: const Icon(
+                            Icons.arrow_forward_ios,
+                            size: 18,
+                          ),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              PageRouteBuilder(
+                                pageBuilder:
+                                    (context, animation, secondaryAnimation) =>
+                                        DriverDetailScreen(driverId: driver.id),
+                                transitionsBuilder: (
                                   context,
-                                  MaterialPageRoute(
-                                    builder: (context) => DriverDetailScreen(driverId: driver.id),
-                                  ),
-                                );
-                              },
-                              child: ListTile(
-                                leading: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Container(
-                                      width: 30,
-                                      alignment: Alignment.center,
-                                      child: Text(
-                                        '${driver.position}',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    CircleAvatar(
-                                      backgroundImage: NetworkImage(driver.imageUrl),
-                                    ),
-                                  ],
-                                ),
-                                title: Text("${driver.name} ${driver.surname}"),
-                                subtitle: Text(team.name),
-                                trailing: Text(
-                                  '${driver.points} punti',
-                                  style: const TextStyle(fontWeight: FontWeight.bold),
-                                ),
+                                  animation,
+                                  secondaryAnimation,
+                                  child,
+                                ) {
+                                  return FadeTransition(
+                                    opacity: animation,
+                                    child: child,
+                                  );
+                                },
                               ),
-                            ),
-                          );
-                        },
+                            );
+                          },
+                        ),
                       );
                     },
                   );
@@ -158,8 +145,7 @@ class _StandingsScreenState extends State<StandingsScreen>
               },
             ),
           ),
-
-          // Constructors Tab
+          // Tab Team
           RefreshIndicator(
             onRefresh: _refreshStandings,
             child: FutureBuilder<List<Constructor>>(
@@ -170,9 +156,7 @@ class _StandingsScreenState extends State<StandingsScreen>
                 } else if (snapshot.hasError) {
                   return Center(child: Text('Errore: ${snapshot.error}'));
                 } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(
-                    child: Text('Non ci sono dati disponibili'),
-                  );
+                  return const Center(child: Text('Nessun team disponibile'));
                 } else {
                   return ListView.builder(
                     itemCount: snapshot.data!.length,
@@ -180,47 +164,42 @@ class _StandingsScreenState extends State<StandingsScreen>
                       final constructor = snapshot.data![index];
                       return Card(
                         margin: const EdgeInsets.symmetric(
-                          horizontal: 8.0,
-                          vertical: 4.0,
+                          horizontal: 16.0,
+                          vertical: 8.0,
                         ),
-                        child: InkWell(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        elevation: 6,
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundImage: NetworkImage(constructor.logoUrl),
+                            backgroundColor: Colors.white,
+                          ),
+                          title: Text(
+                            constructor.name,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          subtitle: Text('Punti: ${constructor.points}'),
+                          trailing: const Icon(
+                            Icons.arrow_forward_ios,
+                            size: 18,
+                          ),
                           onTap: () {
-                            // Qui si potrebbe aggiungere una schermata di dettaglio del team in futuro
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Team: ${constructor.name}'),
+                            Navigator.push(
+                              context,
+                              PageRouteBuilder(
+                                pageBuilder: (context, animation, secondaryAnimation) =>
+                                    ConstructorDetailScreen(constructor: constructor),
+                                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                  return FadeTransition(
+                                    opacity: animation,
+                                    child: child,
+                                  );
+                                },
                               ),
                             );
                           },
-                          child: ListTile(
-                            leading: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Container(
-                                  width: 30,
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    '${constructor.position}',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                CircleAvatar(
-                                  backgroundImage: NetworkImage(
-                                    constructor.logoUrl,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            title: Text(constructor.name),
-                            trailing: Text(
-                              '${constructor.points} punti',
-                              style: const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
                         ),
                       );
                     },

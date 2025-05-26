@@ -25,7 +25,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title: const Text('Impostazioni'),
         titleTextStyle: const TextStyle(color: Colors.white),
 
-        backgroundColor: Colors.red,
+        backgroundColor: Colors.red.shade700,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16.0),

@@ -96,7 +96,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dettagli'),
-        backgroundColor: Colors.red,
+        backgroundColor: Colors.red.shade700,
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -215,7 +215,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                           onPressed: _showLoginDialog,
                           icon: const Icon(Icons.login),
                           label: const Text('Accedi per commentare'),
-                          style: TextButton.styleFrom(foregroundColor: Colors.red),
+                          style: TextButton.styleFrom(foregroundColor: Colors.red.shade700),
                         ),
                       if (_currentUser != null)
                         TextButton.icon(
@@ -232,7 +232,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                           },
                           icon: const Icon(Icons.logout),
                           label: Text('Logout (${_currentUser!.username})'),
-                          style: TextButton.styleFrom(foregroundColor: Colors.red),
+                          style: TextButton.styleFrom(foregroundColor: Colors.red.shade700),
                         ),
                     ],
                   ),
@@ -256,7 +256,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                           child: ElevatedButton(
                             onPressed: _isLoading ? null : _addComment,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
+                              backgroundColor: Colors.red.shade700,
                             ),
                             child: _isLoading
                                 ? const SizedBox(
