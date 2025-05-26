@@ -20,7 +20,7 @@ class _AdminScreenState extends State<AdminScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final ApiService _apiService = ApiService();
-  final String baseUrl = url; 
+  final String baseUrl = url;
 
   // Token di autorizzazione per le chiamate API admin
   final String authToken =
@@ -41,8 +41,8 @@ class _AdminScreenState extends State<AdminScreen>
 
   void _refreshData() {
     setState(() {
-      _driversFuture = _apiService.getDriverStandings();
-      _constructorsFuture = _apiService.getConstructorStandings();
+      _driversFuture = _apiService.getImportedDriverStandings();
+      _constructorsFuture = _apiService.getImportedConstructorStandings();
       _newsFuture = _apiService.getNews();
       _racesFuture = _apiService.getRaces();
     });
@@ -77,6 +77,11 @@ class _AdminScreenState extends State<AdminScreen>
             onPressed: _refreshData,
             tooltip: 'Aggiorna dati',
           ),
+          IconButton(
+            icon: const Icon(Icons.sync),
+            tooltip: 'Aggiorna dati F1 da API',
+            onPressed: _syncF1Data,
+          ),
         ],
       ),
       body: TabBarView(
@@ -94,7 +99,16 @@ class _AdminScreenState extends State<AdminScreen>
           if (currentTab == 0) {
             _showDriverForm();
           } else if (currentTab == 1) {
-            _showConstructorForm();
+            // Non permettere di aggiungere nuovi constructor - sono gestiti automaticamente
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'I team vengono importati automaticamente dalle API F1. Usa il pulsante sincronizza per aggiornare i dati.',
+                ),
+                duration: Duration(seconds: 3),
+              ),
+            );
+            return;
           } else if (currentTab == 2) {
             _showNewsForm();
           } else if (currentTab == 3) {
@@ -129,7 +143,14 @@ class _AdminScreenState extends State<AdminScreen>
                   final driver = snapshot.data![index];
                   final team = constructors.firstWhere(
                     (c) => c.id == driver.teamId,
-                    orElse: () => Constructor(id: 0, name: '-', points: 0, logoUrl: '', position: 0),
+                    orElse:
+                        () => Constructor(
+                          id: 0,
+                          name: '-',
+                          points: 0,
+                          logoUrl: '',
+                          position: 0,
+                        ),
                   );
                   return Card(
                     margin: const EdgeInsets.symmetric(
@@ -146,7 +167,9 @@ class _AdminScreenState extends State<AdminScreen>
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => DriverDetailScreen(driverId: driver.id),
+                            builder:
+                                (context) =>
+                                    DriverDetailScreen(driverId: driver.id),
                           ),
                         );
                       },
@@ -181,7 +204,9 @@ class _AdminScreenState extends State<AdminScreen>
                                     if (response.statusCode == 200) {
                                       final data = jsonDecode(response.body);
                                       if (data['success']) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
                                           const SnackBar(
                                             content: Text(
                                               'Pilota eliminato con successo',
@@ -190,7 +215,9 @@ class _AdminScreenState extends State<AdminScreen>
                                         );
                                         _refreshData();
                                       } else {
-                                        ScaffoldMessenger.of(context).showSnackBar(
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
                                           SnackBar(
                                             content: Text(
                                               'Errore: ${data['error'] ?? "Errore sconosciuto"}',
@@ -199,7 +226,9 @@ class _AdminScreenState extends State<AdminScreen>
                                         );
                                       }
                                     } else {
-                                      ScaffoldMessenger.of(context).showSnackBar(
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
                                         const SnackBar(
                                           content: Text(
                                             'Errore di connessione al server',
@@ -257,8 +286,16 @@ class _AdminScreenState extends State<AdminScreen>
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) => ConstructorDetailScreen(constructor: constructor),
+                      PageRouteBuilder(
+                        pageBuilder: (context, animation, secondaryAnimation) => ConstructorDetailScreen(
+                          constructor: constructor,
+                        ),
+                        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                          return FadeTransition(
+                            opacity: animation,
+                            child: child,
+                          );
+                        },
                       ),
                     );
                   },
@@ -267,62 +304,29 @@ class _AdminScreenState extends State<AdminScreen>
                     children: [
                       IconButton(
                         icon: const Icon(Icons.edit),
-                        onPressed:
-                            () =>
-                                _showConstructorForm(constructor: constructor),
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'I team vengono gestiti automaticamente dalle API F1. Usa il pulsante sincronizza per aggiornare i dati.',
+                              ),
+                              duration: Duration(seconds: 3),
+                            ),
+                          );
+                        },
                       ),
                       IconButton(
                         icon: const Icon(Icons.delete),
-                        onPressed:
-                            () => _showDeleteConfirmation(
-                              context,
-                              'team',
-                              () async {
-                                // Chiamata API per eliminare il team
-                                final response = await http.post(
-                                  Uri.parse('$baseUrl/admin_api.php'),
-                                  body: jsonEncode({
-                                    "entity_type": "constructors",
-                                    "action": "delete",
-                                    "id": constructor.id,
-                                  }),
-                                  headers: {
-                                    'Content-Type': 'application/json',
-                                    'Authorization': 'Bearer $authToken',
-                                  },
-                                );
-
-                                if (response.statusCode == 200) {
-                                  final data = jsonDecode(response.body);
-                                  if (data['success']) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'Team eliminato con successo',
-                                        ),
-                                      ),
-                                    );
-                                    _refreshData();
-                                  } else {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          'Errore: ${data['error'] ?? "Errore sconosciuto"}',
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'Errore di connessione al server',
-                                      ),
-                                    ),
-                                  );
-                                }
-                              },
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'I team vengono gestiti automaticamente dalle API F1. Non possono essere eliminati manualmente.',
+                              ),
+                              duration: Duration(seconds: 3),
                             ),
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -463,18 +467,26 @@ class _AdminScreenState extends State<AdminScreen>
             itemBuilder: (context, index) {
               final race = snapshot.data![index];
               return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                margin: const EdgeInsets.symmetric(
+                  horizontal: 16.0,
+                  vertical: 8.0,
+                ),
                 child: ListTile(
-                  leading: race.flagUrl.isNotEmpty
-                      ? Image.network(
-                          race.flagUrl,
-                          width: 40,
-                          height: 40,
-                          errorBuilder: (context, error, stackTrace) => const Icon(Icons.flag),
-                        )
-                      : const Icon(Icons.flag),
+                  leading:
+                      race.flagUrl.isNotEmpty
+                          ? Image.network(
+                            race.flagUrl,
+                            width: 40,
+                            height: 40,
+                            errorBuilder:
+                                (context, error, stackTrace) =>
+                                    const Icon(Icons.flag),
+                          )
+                          : const Icon(Icons.flag),
                   title: Text(race.name),
-                  subtitle: Text('${race.circuit} - ${race.date.day}/${race.date.month}/${race.date.year}'),
+                  subtitle: Text(
+                    '${race.circuit} - ${race.date.day}/${race.date.month}/${race.date.year}',
+                  ),
                   onTap: () {
                     Navigator.push(
                       context,
@@ -497,14 +509,25 @@ class _AdminScreenState extends State<AdminScreen>
                         onPressed: () async {
                           final confirm = await showDialog<bool>(
                             context: context,
-                            builder: (context) => AlertDialog(
-                              title: const Text('Elimina gara'),
-                              content: const Text('Sei sicuro di voler eliminare questa gara?'),
-                              actions: [
-                                TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Annulla')),
-                                TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Elimina')),
-                              ],
-                            ),
+                            builder:
+                                (context) => AlertDialog(
+                                  title: const Text('Elimina gara'),
+                                  content: const Text(
+                                    'Sei sicuro di voler eliminare questa gara?',
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed:
+                                          () => Navigator.pop(context, false),
+                                      child: const Text('Annulla'),
+                                    ),
+                                    TextButton(
+                                      onPressed:
+                                          () => Navigator.pop(context, true),
+                                      child: const Text('Elimina'),
+                                    ),
+                                  ],
+                                ),
                           );
                           if (confirm == true) {
                             try {
@@ -525,16 +548,26 @@ class _AdminScreenState extends State<AdminScreen>
                                 if (data['success']) {
                                   _refreshData();
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Gara eliminata!')),
+                                    const SnackBar(
+                                      content: Text('Gara eliminata!'),
+                                    ),
                                   );
                                 } else {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Errore: ${data['error'] ?? "Errore sconosciuto"}')),
+                                    SnackBar(
+                                      content: Text(
+                                        'Errore: ${data['error'] ?? "Errore sconosciuto"}',
+                                      ),
+                                    ),
                                   );
                                 }
                               } else {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Errore di connessione al server')),
+                                  const SnackBar(
+                                    content: Text(
+                                      'Errore di connessione al server',
+                                    ),
+                                  ),
                                 );
                               }
                             } catch (e) {
@@ -579,7 +612,9 @@ class _AdminScreenState extends State<AdminScreen>
                   onConfirm();
                 },
                 child: const Text('Elimina'),
-                style: TextButton.styleFrom(foregroundColor: Colors.red.shade700),
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.red.shade700,
+                ),
               ),
             ],
           ),
@@ -603,9 +638,15 @@ class _AdminScreenState extends State<AdminScreen>
     final TextEditingController positionController = TextEditingController(
       text: driver?.position.toString() ?? '0',
     );
-    final TextEditingController nationalityController = TextEditingController(text: driver?.nationality ?? '');
-    final TextEditingController numberController = TextEditingController(text: driver?.number.toString() ?? '');
-    final TextEditingController descriptionController = TextEditingController(text: driver?.description ?? '');
+    final TextEditingController nationalityController = TextEditingController(
+      text: driver?.nationality ?? '',
+    );
+    final TextEditingController numberController = TextEditingController(
+      text: driver?.number.toString() ?? '',
+    );
+    final TextEditingController descriptionController = TextEditingController(
+      text: driver?.description ?? '',
+    );
     int? selectedTeamId = driver?.teamId;
 
     showDialog(
@@ -615,249 +656,178 @@ class _AdminScreenState extends State<AdminScreen>
             future: _constructorsFuture,
             builder: (context, snapshot) {
               final constructors = snapshot.data ?? [];
-              return AlertDialog(
-                title: Text(driver == null ? 'Aggiungi Pilota' : 'Modifica Pilota'),
-                content: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TextField(
-                        controller: nameController,
-                        decoration: const InputDecoration(labelText: 'Nome'),
+              return StatefulBuilder(                builder: (context, setState) {
+                  // Verifica se selectedTeamId è presente nella lista dei team importati
+                  bool isTeamInImportedList = selectedTeamId != null &&
+                      constructors.any((c) => c.id == selectedTeamId);
+                  
+                  return AlertDialog(
+                    title: Text(
+                      driver == null ? 'Aggiungi Pilota' : 'Modifica Pilota',
+                    ),
+                    content: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          TextField(
+                            controller: nameController,
+                            decoration: const InputDecoration(
+                              labelText: 'Nome',
+                            ),
+                          ),
+                          TextField(
+                            controller: surnameController,
+                            decoration: const InputDecoration(
+                              labelText: 'Cognome',
+                            ),
+                          ),                          DropdownButtonFormField<int>(
+                            value: isTeamInImportedList ? selectedTeamId : null,
+                            items:
+                                constructors
+                                    .map(
+                                      (c) => DropdownMenuItem(
+                                        value: c.id,
+                                        child: Text(c.name),
+                                      ),
+                                    )
+                                    .toList(),
+                            onChanged: (val) {
+                              setState(() {
+                                selectedTeamId = val;
+                              });
+                            },
+                            decoration: const InputDecoration(
+                              labelText: 'Team',
+                            ),
+                            hint:
+                                selectedTeamId != null && !isTeamInImportedList && driver != null
+                                    ? const Text(
+                                      'Team del pilota non importato - seleziona un nuovo team',
+                                    )
+                                    : null,
+                          ),
+                          TextField(
+                            controller: pointsController,
+                            decoration: const InputDecoration(
+                              labelText: 'Punti',
+                            ),
+                            keyboardType: TextInputType.number,
+                          ),
+                          TextField(
+                            controller: positionController,
+                            decoration: const InputDecoration(
+                              labelText: 'Posizione',
+                            ),
+                            keyboardType: TextInputType.number,
+                          ),
+                          TextField(
+                            controller: imageUrlController,
+                            decoration: const InputDecoration(
+                              labelText: 'URL Immagine',
+                            ),
+                          ),
+                          TextField(
+                            controller: nationalityController,
+                            decoration: const InputDecoration(
+                              labelText: 'Nazionalità',
+                            ),
+                          ),
+                          TextField(
+                            controller: numberController,
+                            decoration: const InputDecoration(
+                              labelText: 'Numero',
+                            ),
+                            keyboardType: TextInputType.number,
+                          ),
+                          TextField(
+                            controller: descriptionController,
+                            decoration: const InputDecoration(
+                              labelText: 'Biografia/Descrizione',
+                            ),
+                            maxLines: 3,
+                          ),
+                        ],
                       ),
-                      TextField(
-                        controller: surnameController,
-                        decoration: const InputDecoration(labelText: 'Cognome'),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Annulla'),
                       ),
-                      DropdownButtonFormField<int>(
-                        value: selectedTeamId,
-                        items: constructors.map((c) => DropdownMenuItem(
-                          value: c.id,
-                          child: Text(c.name),
-                        )).toList(),
-                        onChanged: (val) {
-                          selectedTeamId = val;
+                      TextButton(                        onPressed: () async {
+                          // Se stiamo modificando un pilota e il suo team originale non è nella lista,
+                          // ma non è stato selezionato un nuovo team, mostra l'errore
+                          if (selectedTeamId == null || 
+                              (!isTeamInImportedList && selectedTeamId == driver?.teamId)) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Seleziona un team dalla lista disponibile!'),
+                              ),
+                            );
+                            return;
+                          }
+                          final body = {
+                            "entity_type": "drivers",
+                            "action": driver != null ? "update" : "create",
+                            if (driver != null) "id": driver.id,
+                            "name": nameController.text,
+                            "surname": surnameController.text,
+                            "team_id": selectedTeamId,
+                            "points": int.parse(pointsController.text),
+                            "position": int.parse(positionController.text),
+                            "image_url": imageUrlController.text,
+                            "nationality": nationalityController.text,
+                            "number": int.tryParse(numberController.text) ?? 0,
+                            "description": descriptionController.text,
+                          };
+                          final response = await http.post(
+                            Uri.parse('$baseUrl/admin_api.php'),
+                            body: jsonEncode(body),
+                            headers: {
+                              'Content-Type': 'application/json',
+                              'Authorization': 'Bearer $authToken',
+                            },
+                          );
+                          if (response.statusCode == 200) {
+                            final data = jsonDecode(response.body);
+                            if (data['success']) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    driver == null
+                                        ? 'Pilota aggiunto con successo'
+                                        : 'Pilota aggiornato con successo',
+                                  ),
+                                ),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Errore: ${data['error'] ?? "Errore sconosciuto"}',
+                                  ),
+                                ),
+                              );
+                            }
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Errore di connessione al server',
+                                ),
+                              ),
+                            );
+                          }
+                          Navigator.pop(context);
+                          _refreshData();
                         },
-                        decoration: const InputDecoration(labelText: 'Team'),
-                      ),
-                      TextField(
-                        controller: pointsController,
-                        decoration: const InputDecoration(labelText: 'Punti'),
-                        keyboardType: TextInputType.number,
-                      ),
-                      TextField(
-                        controller: positionController,
-                        decoration: const InputDecoration(labelText: 'Posizione'),
-                        keyboardType: TextInputType.number,
-                      ),
-                      TextField(
-                        controller: imageUrlController,
-                        decoration: const InputDecoration(
-                          labelText: 'URL Immagine',
-                        ),
-                      ),
-                      TextField(
-                        controller: nationalityController,
-                        decoration: const InputDecoration(labelText: 'Nazionalità'),
-                      ),
-                      TextField(
-                        controller: numberController,
-                        decoration: const InputDecoration(labelText: 'Numero'),
-                        keyboardType: TextInputType.number,
-                      ),
-                      TextField(
-                        controller: descriptionController,
-                        decoration: const InputDecoration(labelText: 'Biografia/Descrizione'),
-                        maxLines: 3,
+                        child: const Text('Salva'),
                       ),
                     ],
-                  ),
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Annulla'),
-                  ),
-                  TextButton(
-                    onPressed: () async {
-                      if (selectedTeamId == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Seleziona un team!')),
-                        );
-                        return;
-                      }
-                      final body = {
-                        "entity_type": "drivers",
-                        "action": driver != null ? "update" : "create",
-                        if (driver != null) "id": driver.id,
-                        "name": nameController.text,
-                        "surname": surnameController.text,
-                        "team_id": selectedTeamId,
-                        "points": int.parse(pointsController.text),
-                        "position": int.parse(positionController.text),
-                        "image_url": imageUrlController.text,
-                        "nationality": nationalityController.text,
-                        "number": int.tryParse(numberController.text) ?? 0,
-                        "description": descriptionController.text,
-                      };
-                      final response = await http.post(
-                        Uri.parse('$baseUrl/admin_api.php'),
-                        body: jsonEncode(body),
-                        headers: {
-                          'Content-Type': 'application/json',
-                          'Authorization': 'Bearer $authToken',
-                        },
-                      );
-                      if (response.statusCode == 200) {
-                        final data = jsonDecode(response.body);
-                        if (data['success']) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(driver == null
-                                  ? 'Pilota aggiunto con successo'
-                                  : 'Pilota aggiornato con successo'),
-                            ),
-                          );
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Errore: ${data['error'] ?? "Errore sconosciuto"}',
-                              ),
-                            ),
-                          );
-                        }
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Errore di connessione al server'),
-                          ),
-                        );
-                      }
-                      Navigator.pop(context);
-                      _refreshData();
-                    },
-                    child: const Text('Salva'),
-                  ),
-                ],
+                  );
+                },
               );
             },
-          ),
-    );
-  }
-
-  // Form per team
-  void _showConstructorForm({Constructor? constructor}) {
-    final TextEditingController nameController = TextEditingController(
-      text: constructor?.name ?? '',
-    );
-    final TextEditingController pointsController = TextEditingController(
-      text: constructor?.points.toString() ?? '0',
-    );
-    final TextEditingController logoUrlController = TextEditingController(
-      text: constructor?.logoUrl ?? '',
-    );
-    final TextEditingController positionController = TextEditingController(
-      text: constructor?.position.toString() ?? '0',
-    );
-
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text(
-              constructor == null ? 'Aggiungi Team' : 'Modifica Team',
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(labelText: 'Nome'),
-                ),
-                TextField(
-                  controller: pointsController,
-                  decoration: const InputDecoration(labelText: 'Punti'),
-                  keyboardType: TextInputType.number,
-                ),
-                TextField(
-                  controller: positionController,
-                  decoration: const InputDecoration(labelText: 'Posizione'),
-                  keyboardType: TextInputType.number,
-                ),
-                TextField(
-                  controller: logoUrlController,
-                  decoration: const InputDecoration(labelText: 'URL Logo'),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Annulla'),
-              ),
-              TextButton(
-                onPressed: () async {
-                  // Implementazione chiamata API per salvare il team
-                  final action = constructor == null ? "create" : "update";
-                  final Map<String, dynamic> requestData = {
-                    "entity_type": "constructors",
-                    "action": action,
-                    "name": nameController.text,
-                    "points": int.parse(pointsController.text),
-                    "position": int.parse(positionController.text),
-                    "logo_url": logoUrlController.text,
-                  };
-
-                  // Aggiungi l'ID solo se stiamo aggiornando un team esistente
-                  if (constructor != null) {
-                    requestData["id"] = constructor.id;
-                  }
-
-                  final response = await http.post(
-                    Uri.parse('$baseUrl/admin_api.php'),
-                    body: jsonEncode(requestData),
-                    headers: {
-                      'Content-Type': 'application/json',
-                      'Authorization': 'Bearer $authToken',
-                    },
-                  );
-
-                  Navigator.pop(context);
-
-                  if (response.statusCode == 200) {
-                    final data = jsonDecode(response.body);
-                    if (data['success']) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            constructor == null
-                                ? 'Team aggiunto con successo'
-                                : 'Team aggiornato con successo',
-                          ),
-                        ),
-                      );
-                      _refreshData();
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            'Errore: ${data['error'] ?? "Errore sconosciuto"}',
-                          ),
-                        ),
-                      );
-                    }
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Errore di connessione al server'),
-                      ),
-                    );
-                  }
-                },
-                child: const Text('Salva'),
-              ),
-            ],
           ),
     );
   }
@@ -974,12 +944,23 @@ class _AdminScreenState extends State<AdminScreen>
 
   // Form per gare
   void _showRaceForm({Race? race}) {
-    final TextEditingController nameController = TextEditingController(text: race?.name ?? '');
-    final TextEditingController circuitController = TextEditingController(text: race?.circuit ?? '');
-    final TextEditingController dateController = TextEditingController(text: race != null ? '${race.date.year}-${race.date.month.toString().padLeft(2, '0')}-${race.date.day.toString().padLeft(2, '0')}' : '');
-    final TextEditingController flagUrlController = TextEditingController(text: race?.flagUrl ?? '');
+    final TextEditingController nameController = TextEditingController(
+      text: race?.name ?? '',
+    );
+    final TextEditingController circuitController = TextEditingController(
+      text: race?.circuit ?? '',
+    );
+    final TextEditingController dateController = TextEditingController(
+      text:
+          race != null
+              ? '${race.date.year}-${race.date.month.toString().padLeft(2, '0')}-${race.date.day.toString().padLeft(2, '0')}'
+              : '',
+    );
+    final TextEditingController flagUrlController = TextEditingController(
+      text: race?.flagUrl ?? '',
+    );
     bool isPast = race?.isPast ?? false;
-    
+
     showDialog(
       context: context,
       builder: (context) {
@@ -995,6 +976,7 @@ class _AdminScreenState extends State<AdminScreen>
                 return false;
               }
             }
+
             final bool disableIsPast = isDateFuture();
             return AlertDialog(
               title: Text(race == null ? 'Aggiungi Gara' : 'Modifica Gara'),
@@ -1014,26 +996,31 @@ class _AdminScreenState extends State<AdminScreen>
                     const SizedBox(height: 8),
                     TextField(
                       controller: dateController,
-                      decoration: const InputDecoration(labelText: 'Data (YYYY-MM-DD)'),
+                      decoration: const InputDecoration(
+                        labelText: 'Data (YYYY-MM-DD)',
+                      ),
                       onChanged: (_) => setState(() {}),
                     ),
                     const SizedBox(height: 8),
                     TextField(
                       controller: flagUrlController,
-                      decoration: const InputDecoration(labelText: 'URL bandiera'),
+                      decoration: const InputDecoration(
+                        labelText: 'URL bandiera',
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Row(
                       children: [
                         Checkbox(
                           value: disableIsPast ? false : isPast,
-                          onChanged: disableIsPast
-                              ? null
-                              : (val) {
-                                  setState(() {
-                                    isPast = val ?? false;
-                                  });
-                                },
+                          onChanged:
+                              disableIsPast
+                                  ? null
+                                  : (val) {
+                                    setState(() {
+                                      isPast = val ?? false;
+                                    });
+                                  },
                         ),
                         Text(
                           'Gara passata',
@@ -1044,7 +1031,11 @@ class _AdminScreenState extends State<AdminScreen>
                         if (disableIsPast)
                           const Padding(
                             padding: EdgeInsets.only(left: 8.0),
-                            child: Icon(Icons.info_outline, color: Colors.grey, size: 18),
+                            child: Icon(
+                              Icons.info_outline,
+                              color: Colors.grey,
+                              size: 18,
+                            ),
                           ),
                       ],
                     ),
@@ -1070,7 +1061,8 @@ class _AdminScreenState extends State<AdminScreen>
                     final circuit = circuitController.text.trim();
                     final dateStr = dateController.text.trim();
                     final flagUrl = flagUrlController.text.trim();
-                    if (name.isEmpty || circuit.isEmpty || dateStr.isEmpty) return;
+                    if (name.isEmpty || circuit.isEmpty || dateStr.isEmpty)
+                      return;
                     try {
                       final response = await http.post(
                         Uri.parse('$baseUrl/admin_api.php'),
@@ -1096,22 +1088,36 @@ class _AdminScreenState extends State<AdminScreen>
                           Navigator.pop(context);
                           _refreshData();
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(race == null ? 'Gara aggiunta!' : 'Gara modificata!')),
+                            SnackBar(
+                              content: Text(
+                                race == null
+                                    ? 'Gara aggiunta!'
+                                    : 'Gara modificata!',
+                              ),
+                            ),
                           );
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Errore: ${data['error'] ?? "Errore sconosciuto"}')),
+                            SnackBar(
+                              content: Text(
+                                'Errore: ${data['error'] ?? "Errore sconosciuto"}',
+                              ),
+                            ),
                           );
                         }
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Errore HTTP ${response.statusCode}: ${response.body}')),
+                          SnackBar(
+                            content: Text(
+                              'Errore HTTP ${response.statusCode}: ${response.body}',
+                            ),
+                          ),
                         );
                       }
                     } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Errore: $e')),
-                      );
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text('Errore: $e')));
                     }
                   },
                   child: const Text('Salva'),
@@ -1122,5 +1128,44 @@ class _AdminScreenState extends State<AdminScreen>
         );
       },
     );
+  }
+
+  // AGGIUNTA: funzione per sincronizzazione dati F1
+  void _syncF1Data() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/admin_api.php'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $authToken',
+        },
+        body: jsonEncode({'entity_type': 'sync', 'action': 'update'}),
+      );
+      Navigator.pop(context); // Chiudi il dialogo
+      final data = jsonDecode(response.body);
+      if (data['success'] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Dati F1 aggiornati con successo!')),
+        );
+        _refreshData();      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Errore: ${data['error'] ?? "Errore sconosciuto"}',
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Errore di rete: $e')));
+    }
   }
 }

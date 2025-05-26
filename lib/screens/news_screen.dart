@@ -20,11 +20,20 @@ class _NewsScreenState extends State<NewsScreen> {
   // Future per i dati delle notizie
   late Future<List<News>> _newsFuture;
 
+  // Modalità di visualizzazione: 0 = lista, 1 = griglia 2 colonne
+  int _viewMode = 0;
+
   @override
   void initState() {
     super.initState();
     // Carica le notizie all'avvio della schermata
     _newsFuture = _apiService.getNews();
+  }
+
+  void _toggleViewMode() {
+    setState(() {
+      _viewMode = (_viewMode + 1) % 2;
+    });
   }
 
   Future<void> _refreshNews() async {
@@ -37,6 +46,19 @@ class _NewsScreenState extends State<NewsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Notizie'),
+        backgroundColor: Colors.red.shade700,
+        actions: [
+          IconButton(
+            icon: Icon(
+              _viewMode == 0 ? Icons.view_list : Icons.grid_view,
+            ),
+            tooltip: 'Cambia vista',
+            onPressed: _toggleViewMode,
+          ),
+        ],
+      ),
       body: FutureBuilder<List<News>>(
         future: _newsFuture,
         builder: (context, snapshot) {
@@ -54,105 +76,125 @@ class _NewsScreenState extends State<NewsScreen> {
           }
           // Costruisce la lista delle notizie quando i dati sono disponibili
           else {
+            final newsList = snapshot.data!;
             return RefreshIndicator(
               onRefresh: _refreshNews,
-              child: ListView.builder(
-                itemCount: snapshot.data!.length,
-                itemBuilder: (context, index) {
-                  final news = snapshot.data![index];
-                  // Card cliccabile per ogni notizia
-                  return GestureDetector(
-                    // Naviga alla schermata di dettaglio quando si tocca una notizia
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        PageRouteBuilder(
-                          pageBuilder:
-                              (context, animation, secondaryAnimation) =>
-                                  NewsDetailScreen(news: news),
-                          transitionsBuilder: (
-                            context,
-                            animation,
-                            secondaryAnimation,
-                            child,
-                          ) {
-                            return FadeTransition(
-                              opacity: animation,
-                              child: child,
-                            );
-                          },
-                        ),
-                      );
-                    },
-                    child: Card(
-                      margin: const EdgeInsets.all(12.0),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18),
+              child: _viewMode == 0
+                  ? ListView.builder(
+                      itemCount: newsList.length,
+                      itemBuilder: (context, index) {
+                        final news = newsList[index];
+                        return _buildNewsCard(context, news, isGrid: false);
+                      },
+                    )
+                  : GridView.builder(
+                      padding: const EdgeInsets.all(8),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 0.68,
                       ),
-                      elevation: 6,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (news.imageUrl.isNotEmpty)
-                            Hero(
-                              tag: 'news-image-${news.id}',
-                              child: ClipRRect(
-                                borderRadius: const BorderRadius.vertical(
-                                  top: Radius.circular(18),
-                                ),
-                                child: Image.network(
-                                  news.imageUrl,
-                                  height: 200,
-                                  width: double.infinity,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Container(
-                                      height: 200,
-                                      color: Colors.grey[300],
-                                      child: const Center(
-                                        child: Icon(Icons.error),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ),
-                          Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  news.title,
-                                  style: const TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  news.content,
-                                  maxLines: 3,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(fontSize: 15),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Pubblicato il ${news.publishDate.day}/${news.publishDate.month}/${news.publishDate.year}',
-                                  style: TextStyle(color: Colors.grey[600]),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+                      itemCount: newsList.length,
+                      itemBuilder: (context, index) {
+                        final news = newsList[index];
+                        return _buildNewsCard(context, news, isGrid: true);
+                      },
                     ),
-                  );
-                },
-              ),
             );
           }
         },
+      ),
+    );
+  }
+
+  Widget _buildNewsCard(BuildContext context, News news, {bool isGrid = false}) {
+    return GestureDetector(
+      // Naviga alla schermata di dettaglio quando si tocca una notizia
+      onTap: () {
+        Navigator.push(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                NewsDetailScreen(news: news),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return FadeTransition(
+                opacity: animation,
+                child: child,
+              );
+            },
+          ),
+        );
+      },
+      child: Card(
+        margin: EdgeInsets.all(isGrid ? 4.0 : 12.0),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+        ),
+        elevation: 6,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (news.imageUrl.isNotEmpty)
+              Hero(
+                tag: 'news-image-${news.id}',
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(18),
+                  ),
+                  child: Image.network(
+                    news.imageUrl,
+                    height: isGrid ? 120 : 200,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        height: isGrid ? 120 : 200,
+                        color: Colors.grey[300],
+                        child: const Center(
+                          child: Icon(Icons.error),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            Padding(
+              padding: EdgeInsets.all(isGrid ? 8.0 : 16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    news.title,
+                    style: TextStyle(
+                      fontSize: isGrid ? 15 : 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: isGrid ? 2 : null,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    news.content,
+                    maxLines: isGrid ? 2 : 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: isGrid ? 13 : 15),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Pubblicato il ${news.publishDate.day}/${news.publishDate.month}/${news.publishDate.year}',
+                    style: TextStyle(color: Colors.grey[600], fontSize: isGrid ? 11 : 13),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -1,9 +1,25 @@
 <?php
 header('Access-Control-Allow-Origin: *');
 header('Content-Type: application/json; charset=UTF-8');
+header('Access-Control-Allow-Methods: POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
-// Connessione al database
+// Handle preflight OPTIONS request
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
+
+// Connessione al database e JWT helper
 include_once '../config/config.php';
+include_once 'jwt_helper.php';
+
+// Verifica autenticazione (sia admin che user possono commentare)
+try {
+    $user_data = JWTHelper::requireAuth();
+} catch (Exception $e) {
+    exit();
+}
 
 try {
     $database = new Database();
@@ -19,13 +35,20 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-// Ottieni i dati dalla richiesta
-$news_id = isset($_POST['news_id']) ? intval($_POST['news_id']) : 0;
-$user_id = isset($_POST['user_id']) ? intval($_POST['user_id']) : 0;
-$content = isset($_POST['content']) ? trim($_POST['content']) : '';
+// Ottieni i dati dalla richiesta (supporta sia POST che JSON)
+$data = json_decode(file_get_contents('php://input'), true);
+if (!$data) {
+    $data = $_POST;
+}
+
+$news_id = isset($data['news_id']) ? intval($data['news_id']) : 0;
+$content = isset($data['content']) ? trim($data['content']) : '';
+
+// Usa l'ID utente dal token JWT invece che dai dati POST
+$user_id = $user_data->user_id;
 
 // Validazione
-if ($news_id <= 0 || $user_id <= 0 || empty($content)) {
+if ($news_id <= 0 || empty($content)) {
     echo json_encode(["success" => false, "message" => "Dati mancanti o non validi"]);
     exit;
 }

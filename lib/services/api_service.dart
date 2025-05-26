@@ -52,8 +52,8 @@ class ApiService {
     }
   }
 
-  // Fetch drivers standings from the API
-  Future<List<Driver>> getDriverStandings() async {
+  // Fetch imported drivers standings from the API (solo piloti importati)
+  Future<List<Driver>> getImportedDriverStandings() async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/drivers.php'));
 
@@ -143,8 +143,8 @@ class ApiService {
     }
   }
 
-  // Fetch constructors standings from the API
-  Future<List<Constructor>> getConstructorStandings() async {
+  // Fetch imported constructors standings from the API (solo team importati)
+  Future<List<Constructor>> getImportedConstructorStandings() async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/constructors.php'));
 
@@ -162,24 +162,10 @@ class ApiService {
 
           List<dynamic> data = json.decode(response.body);
           List<Constructor> constructors =
-              data.map((json) => Constructor.fromJson(json)).toList();
-
-          // Ordina i team in base ai punti (dal più alto al più basso)
+              data.map((json) => Constructor.fromJson(json)).toList();          // Ordina i team in base ai punti (dal più alto al più basso)
           constructors.sort((a, b) => b.points.compareTo(a.points));
 
-          // Assegna la posizione in base all'ordinamento
-          for (int i = 0; i < constructors.length; i++) {
-            final constructor = constructors[i];
-            // Crea un nuovo oggetto Constructor con la posizione aggiornata
-            constructors[i] = Constructor(
-              id: constructor.id,
-              name: constructor.name,
-              points: constructor.points,
-              logoUrl: constructor.logoUrl,
-              position: i + 1, // La posizione è l'indice + 1
-            );
-          }
-
+          // Non è più necessario riassegnare le posizioni dato che sono calcolate dal backend
           return constructors;
         } catch (e) {
           throw Exception(
@@ -323,6 +309,88 @@ class ApiService {
       return null;
     } catch (e) {
       return null;
+    }
+  }
+
+  // Nuove funzioni con filtro anno
+  Future<List<Driver>> getDriverStandingsByYear(int year) async {
+    final response = await http.get(Uri.parse('$baseUrl/drivers.php?year=$year'));
+    if (response.statusCode == 200) {
+      List<dynamic> data = json.decode(response.body);
+      List<Driver> drivers = data.map((json) => Driver.fromJson(json)).toList();
+      drivers.sort((a, b) => b.points.compareTo(a.points));
+      for (int i = 0; i < drivers.length; i++) {
+        final driver = drivers[i];
+        drivers[i] = Driver(
+          id: driver.id,
+          name: driver.name,
+          surname: driver.surname,
+          teamId: driver.teamId,
+          points: driver.points,
+          imageUrl: driver.imageUrl,
+          position: i + 1,
+          victories: driver.victories,
+          nationality: driver.nationality,
+          number: driver.number,
+        );
+      }
+      return drivers;
+    } else {
+      throw Exception('Failed to load driver standings for year $year');
+    }
+  }
+  Future<List<Constructor>> getConstructorStandingsByYear(int year) async {
+    final response = await http.get(Uri.parse('$baseUrl/constructors.php?year=$year'));
+    if (response.statusCode == 200) {
+      List<dynamic> data = json.decode(response.body);
+      List<Constructor> constructors = data.map((json) => Constructor.fromJson(json)).toList();
+      constructors.sort((a, b) => b.points.compareTo(a.points));
+      return constructors;
+    } else {
+      throw Exception('Failed to load constructor standings for year $year');
+    }
+  }
+  Future<List<Race>> getRacesByYear(int year) async {
+    final response = await http.get(Uri.parse('$baseUrl/races.php?year=$year'));
+    if (response.statusCode == 200) {
+      List<dynamic> data = json.decode(response.body);
+      return data.map((json) => Race.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to load races for year $year');
+    }
+  }
+
+  // Get drivers by team ID
+  Future<List<Driver>> getDriversByTeamId(int teamId, {int? year}) async {
+    try {
+      final currentYear = year ?? DateTime.now().year;
+      final response = await http.get(
+        Uri.parse('$baseUrl/drivers.php?team_id=$teamId&year=$currentYear'),
+      );
+
+      if (debugMode) {
+        print('Drivers by Team API Response Status: ${response.statusCode}');
+        print('Drivers by Team API Response Body: ${response.body}');
+      }
+
+      if (response.statusCode == 200) {
+        try {
+          if (response.body.isEmpty) {
+            return [];
+          }
+
+          List<dynamic> data = json.decode(response.body);
+          return data.map((json) => Driver.fromJson(json)).toList();
+        } catch (e) {
+          throw Exception(
+            'Invalid JSON response: ${e.toString()}\nResponse body: ${response.body.length > 200 ? response.body.substring(0, 200) + '...' : response.body}',
+          );
+        }
+      } else {
+        throw Exception('Failed to load drivers for team $teamId: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Network error: ${e.toString()}');
     }
   }
 }

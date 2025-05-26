@@ -3,6 +3,7 @@ import '../models/driver_details.dart';
 import '../models/f1_models.dart';
 import '../services/api_service.dart';
 import '../services/preferences_service.dart';
+import 'constructor_detail_screen.dart';
 
 // Schermata che mostra i dettagli completi di un pilota di Formula 1
 // Visualizza informazioni personali, statistiche e contenuti multimediali
@@ -120,20 +121,19 @@ class _DriverDetailScreenState extends State<DriverDetailScreen>
 
   Widget _buildDriverHeader(DriverDetails driver) {
     return FutureBuilder<List<Constructor>>(
-      future: ApiService().getConstructorStandings(),
+      future: ApiService().getImportedConstructorStandings(),
       builder: (context, snapshot) {
         String teamName = '';
         if (snapshot.hasData) {
           final team = snapshot.data!.firstWhere(
             (c) => c.id == driver.teamId,
-            orElse:
-                () => Constructor(
-                  id: 0,
-                  name: '-',
-                  points: 0,
-                  logoUrl: '',
-                  position: 0,
-                ),
+            orElse: () => Constructor(
+              id: 0,
+              name: '-',
+              points: 0,
+              logoUrl: '',
+              position: 0,
+            ),
           );
           teamName = team.name;
         } else if (snapshot.connectionState == ConnectionState.waiting) {
@@ -221,20 +221,19 @@ class _DriverDetailScreenState extends State<DriverDetailScreen>
 
   Widget _buildProfileTab(DriverDetails driver) {
     return FutureBuilder<List<Constructor>>(
-      future: ApiService().getConstructorStandings(),
+      future: ApiService().getImportedConstructorStandings(),
       builder: (context, snapshot) {
         String teamName = '';
         if (snapshot.hasData) {
           final team = snapshot.data!.firstWhere(
             (c) => c.id == driver.teamId,
-            orElse:
-                () => Constructor(
-                  id: 0,
-                  name: '-',
-                  points: 0,
-                  logoUrl: '',
-                  position: 0,
-                ),
+            orElse: () => Constructor(
+              id: 0,
+              name: '-',
+              points: 0,
+              logoUrl: '',
+              position: 0,
+            ),
           );
           teamName = team.name;
         } else if (snapshot.connectionState == ConnectionState.waiting) {
@@ -260,11 +259,10 @@ class _DriverDetailScreenState extends State<DriverDetailScreen>
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                         ),
-                      ),
-                      const Divider(),
+                      ),                      const Divider(),
                       _infoRow('Nazionalità', driver.nationality),
                       _infoRow('Numero', driver.number.toString()),
-                      _infoRow('Team', teamName),
+                      _buildTeamRow(teamName, snapshot.data),
                       _infoRow('Posizione', driver.position.toString()),
                       _infoRow('Punti', driver.points.toString()),
                     ],
@@ -370,7 +368,6 @@ class _DriverDetailScreenState extends State<DriverDetailScreen>
       ),
     );
   }
-
   Widget _infoRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -379,6 +376,49 @@ class _DriverDetailScreenState extends State<DriverDetailScreen>
         children: [
           Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
           Text(value),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTeamRow(String teamName, List<Constructor>? constructors) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text('Team', style: TextStyle(fontWeight: FontWeight.bold)),
+          GestureDetector(
+            onTap: () {
+              if (constructors != null) {
+                final team = constructors.firstWhere(
+                  (c) => c.name == teamName,
+                  orElse: () => Constructor(
+                    id: 0,
+                    name: teamName,
+                    points: 0,
+                    logoUrl: '',
+                    position: 0,
+                  ),
+                );
+                if (team.id != 0) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ConstructorDetailScreen(constructor: team),
+                    ),
+                  );
+                }
+              }
+            },
+            child: Text(
+              teamName,
+              style: TextStyle(
+                color: constructors != null ? Colors.blue : Colors.black,
+                decoration: constructors != null ? TextDecoration.underline : TextDecoration.none,
+              ),
+            ),
+          ),
         ],
       ),
     );

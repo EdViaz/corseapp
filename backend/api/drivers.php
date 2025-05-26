@@ -11,10 +11,23 @@ try {
     $database = new Database();
     $conn = $database->getConnection();
 
-    // Query to get driver standings using prepared statement
-    $sql = "SELECT * FROM drivers ORDER BY position ASC";
-    $stmt = $conn->prepare($sql);
-    $stmt->execute();
+    // Prendi l'anno dalla query string, default anno corrente
+    $year = isset($_GET['year']) ? intval($_GET['year']) : intval(date('Y'));
+    
+    // Check if team_id is provided to filter by team
+    $team_id = isset($_GET['team_id']) ? intval($_GET['team_id']) : null;
+    
+    if ($team_id) {
+        // Get drivers for a specific team
+        $sql = "SELECT * FROM drivers WHERE year = :year AND team_id = :team_id AND external_id IS NOT NULL AND external_id != '' ORDER BY position ASC";
+        $stmt = $conn->prepare($sql);
+        $stmt->execute(['year' => $year, 'team_id' => $team_id]);
+    } else {
+        // Get all drivers (existing behavior)
+        $sql = "SELECT * FROM drivers WHERE year = :year AND external_id IS NOT NULL AND external_id != '' ORDER BY position ASC";
+        $stmt = $conn->prepare($sql);
+        $stmt->execute(['year' => $year]);
+    }
     
     $drivers = $stmt->fetchAll();
     

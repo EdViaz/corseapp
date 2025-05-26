@@ -5,27 +5,21 @@ class User {
   final String username;
   final String? password; // Non memorizzato localmente dopo l'autenticazione
 
-  User({
-    required this.id,
-    required this.username,
-    this.password,
-  });
+  User({required this.id, required this.username, this.password});
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      id: json['id'] is int
-          ? json['id']
-          : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      id:
+          json['id'] is int
+              ? json['id']
+              : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
       username: json['username'] ?? '',
       password: null, // Non memorizziamo la password localmente
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'username': username,
-    };
+    return {'id': id, 'username': username};
   }
 }
 
@@ -48,15 +42,18 @@ class Comment {
 
   factory Comment.fromJson(Map<String, dynamic> json) {
     return Comment(
-      id: json['id'] is int
-          ? json['id']
-          : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
-      newsId: json['news_id'] is int
-          ? json['news_id']
-          : int.tryParse(json['news_id']?.toString() ?? '0') ?? 0,
-      userId: json['user_id'] is int
-          ? json['user_id']
-          : int.tryParse(json['user_id']?.toString() ?? '0') ?? 0,
+      id:
+          json['id'] is int
+              ? json['id']
+              : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      newsId:
+          json['news_id'] is int
+              ? json['news_id']
+              : int.tryParse(json['news_id']?.toString() ?? '0') ?? 0,
+      userId:
+          json['user_id'] is int
+              ? json['user_id']
+              : int.tryParse(json['user_id']?.toString() ?? '0') ?? 0,
       username: json['username'] ?? 'Utente anonimo',
       content: json['content'] ?? '',
       date: DateTime.tryParse(json['date'] ?? '') ?? DateTime.now(),

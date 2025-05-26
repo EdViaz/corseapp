@@ -1,23 +1,35 @@
 <?php
 header('Access-Control-Allow-Origin: *');
 header('Content-Type: application/json; charset=UTF-8');
+header('Access-Control-Allow-Methods: POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
-// Connessione al database
+// Handle preflight OPTIONS request
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
+
+// Connessione al database e JWT helper
 include_once '../config/config.php';
+include_once 'jwt_helper.php';
 
 try {
     $database = new Database();
-    $conn = $database->getConnection();
-
-    // Verifica che la richiesta sia POST
+    $conn = $database->getConnection();    // Verifica che la richiesta sia POST
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         echo json_encode(["success" => false, "message" => "Metodo non consentito"]);
         exit;
     }
 
-    // Ottieni i dati dalla richiesta
-    $username = isset($_POST['username']) ? trim($_POST['username']) : '';
-    $password = isset($_POST['password']) ? trim($_POST['password']) : '';
+    // Ottieni i dati dalla richiesta (supporta sia POST che JSON)
+    $data = json_decode(file_get_contents('php://input'), true);
+    if (!$data) {
+        $data = $_POST;
+    }
+
+    $username = isset($data['username']) ? trim($data['username']) : '';
+    $password = isset($data['password']) ? trim($data['password']) : '';
 
     // Validazione
     if (empty($username) || empty($password)) {
@@ -41,16 +53,22 @@ try {
         if (!password_verify($password, $user['password'])) {
             echo json_encode(["success" => false, "message" => "Credenziali non valide"]);
             exit;
-        }
-
-        // Rimuovi la password dai dati da restituire
+        }        // Rimuovi la password dai dati da restituire
         unset($user['password']);
+
+        // Genera i token JWT
+        $access_token = JWTHelper::generateAccessToken($user['id'], $user['username'], 'user');
+        $refresh_token = JWTHelper::generateRefreshToken($user['id'], $user['username'], 'user');
 
         // Login riuscito
         echo json_encode([
             "success" => true,
             "message" => "Login effettuato con successo",
-            "user" => $user
+            "user" => $user,
+            "access_token" => $access_token,
+            "refresh_token" => $refresh_token,
+            "token_type" => "Bearer",
+            "expires_in" => 3600 // 1 ora
         ]);
     } catch (PDOException $e) {
         echo json_encode(["success" => false, "message" => "Errore durante il login: " . $e->getMessage()]);

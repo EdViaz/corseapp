@@ -6,27 +6,113 @@ import '../models/f1_models.dart';
 
 class AdminService {
   // Base URL for the PHP API
+  final String baseUrl = url;
 
-   final String baseUrl = url;
-
-  // Store the auth token after login
-  String? _authToken;
-  String? get authToken => _authToken;
+  // Store the JWT tokens after login
+  String? _accessToken;
+  String? _refreshToken;
+  DateTime? _tokenExpiry;
+  
+  String? get accessToken => _accessToken;
   
   // Token storage keys
-  static const String _tokenKey = 'auth_token';
+  static const String _accessTokenKey = 'admin_access_token';
+  static const String _refreshTokenKey = 'admin_refresh_token';
+  static const String _tokenExpiryKey = 'admin_token_expiry';
   
-  // Constructor - load token from storage
+  // Constructor - load tokens from storage
   AdminService() {
-    _loadTokenFromStorage();
+    _loadTokensFromStorage();
   }
   
-  // Load token from SharedPreferences
-  Future<void> _loadTokenFromStorage() async {
+  // Load tokens from SharedPreferences
+  Future<void> _loadTokensFromStorage() async {
     final prefs = await SharedPreferences.getInstance();
-    _authToken = prefs.getString(_tokenKey);
+    _accessToken = prefs.getString(_accessTokenKey);
+    _refreshToken = prefs.getString(_refreshTokenKey);
+    
+    final expiryStr = prefs.getString(_tokenExpiryKey);
+    if (expiryStr != null) {
+      _tokenExpiry = DateTime.parse(expiryStr);
+    }
   }
-
+  
+  // Save tokens to SharedPreferences
+  Future<void> _saveTokensToStorage(String accessToken, String? refreshToken, int expiresIn) async {
+    final prefs = await SharedPreferences.getInstance();
+    final expiry = DateTime.now().add(Duration(seconds: expiresIn));
+    
+    _accessToken = accessToken;
+    _refreshToken = refreshToken;
+    _tokenExpiry = expiry;
+    
+    await prefs.setString(_accessTokenKey, accessToken);
+    if (refreshToken != null) {
+      await prefs.setString(_refreshTokenKey, refreshToken);
+    }
+    await prefs.setString(_tokenExpiryKey, expiry.toIso8601String());
+  }
+  
+  // Check if token is expired
+  bool _isTokenExpired() {
+    if (_tokenExpiry == null) return true;
+    return DateTime.now().isAfter(_tokenExpiry!.subtract(Duration(minutes: 5))); // 5 min buffer
+  }
+  
+  // Refresh access token
+  Future<bool> _refreshAccessToken() async {
+    if (_refreshToken == null) return false;
+    
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/refresh_token.php'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'refresh_token': _refreshToken}),
+      );
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success'] == true) {
+          await _saveTokensToStorage(
+            data['access_token'],
+            data['refresh_token'] ?? _refreshToken,
+            data['expires_in'] ?? 3600,
+          );
+          return true;
+        }
+      }
+    } catch (e) {
+      print('Error refreshing admin token: $e');
+    }
+    
+    // Se il refresh fallisce, pulisci i token
+    await _clearTokens();
+    return false;
+  }
+  
+  // Get valid access token
+  Future<String?> _getValidAccessToken() async {
+    if (_accessToken == null) return null;
+    
+    if (_isTokenExpired()) {
+      final refreshed = await _refreshAccessToken();
+      if (!refreshed) return null;
+    }
+    
+    return _accessToken;
+  }
+  
+  // Clear all tokens
+  Future<void> _clearTokens() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_accessTokenKey);
+    await prefs.remove(_refreshTokenKey);
+    await prefs.remove(_tokenExpiryKey);
+    
+    _accessToken = null;
+    _refreshToken = null;
+    _tokenExpiry = null;
+  }
   // Login method
   Future<Map<String, dynamic>> login(String username, String password) async {
     try {
@@ -39,13 +125,17 @@ class AdminService {
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200 && data['success'] == true) {
-        _authToken = data['token'];
-        // Save token to SharedPreferences
-        await _saveTokenToStorage(_authToken!);
+        // Save JWT tokens
+        await _saveTokensToStorage(
+          data['access_token'],
+          data['refresh_token'],
+          data['expires_in'] ?? 3600,
+        );
+        
         return {
           'success': true,
           'message': data['message'],
-          'username': data['username'],
+          'username': data['user']['username'],
         };
       } else {
         return {'success': false, 'message': data['error'] ?? 'Login failed'};
@@ -54,46 +144,54 @@ class AdminService {
       return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
-  
-  // Save token to SharedPreferences
-  Future<void> _saveTokenToStorage(String token) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_tokenKey, token);
-  }
 
   // Logout method
   Future<void> logout() async {
-    _authToken = null;
-    // Clear token from SharedPreferences
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_tokenKey);
+    try {
+      // Call logout endpoint if we have a valid token
+      final token = await _getValidAccessToken();
+      if (token != null) {
+        await http.post(
+          Uri.parse('$baseUrl/logout.php'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        );
+      }
+    } catch (e) {
+      // Ignore network errors during logout
+    } finally {
+      // Always clear local tokens
+      await _clearTokens();
+    }
   }
 
   // Check if user is logged in
   bool isLoggedIn() {
-    return _authToken != null;
+    return _accessToken != null && !_isTokenExpired();
   }
-  
+
   // Ensure token is loaded (useful when app starts)
   Future<bool> ensureLoggedIn() async {
-    if (_authToken == null) {
-      await _loadTokenFromStorage();
+    if (_accessToken == null) {
+      await _loadTokensFromStorage();
     }
     return isLoggedIn();
   }
 
   // CRUD operations for News
   Future<Map<String, dynamic>> createOrUpdateNews(News news) async {
-    if (!isLoggedIn()) {
+    final token = await _getValidAccessToken();
+    if (token == null) {
       return {'success': false, 'message': 'Not authenticated'};
     }
-
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/admin_api.php'),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $_authToken',
+          'Authorization': 'Bearer $token',
         },
         body: jsonEncode({
           'entity_type': 'news',
@@ -106,9 +204,7 @@ class AdminService {
           'additional_images': news.additionalImages,
         }),
       );
-
       final data = jsonDecode(response.body);
-
       if (response.statusCode == 200 && data['success'] == true) {
         return {'success': true, 'message': data['message'], 'id': data['id']};
       } else {
@@ -121,19 +217,19 @@ class AdminService {
       return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
-  
+
   // Delete News
   Future<Map<String, dynamic>> deleteNews(int id) async {
-    if (!isLoggedIn()) {
+    final token = await _getValidAccessToken();
+    if (token == null) {
       return {'success': false, 'message': 'Not authenticated'};
     }
-    
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/admin_api.php'),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $_authToken',
+          'Authorization': 'Bearer $token',
         },
         body: jsonEncode({
           'entity_type': 'news',
@@ -141,9 +237,7 @@ class AdminService {
           'id': id,
         }),
       );
-      
       final data = jsonDecode(response.body);
-      
       if (response.statusCode == 200 && data['success'] == true) {
         return {'success': true, 'message': data['message']};
       } else {
@@ -159,16 +253,16 @@ class AdminService {
 
   // CRUD operations for Drivers
   Future<Map<String, dynamic>> createOrUpdateDriver(Driver driver) async {
-    if (!isLoggedIn()) {
+    final token = await _getValidAccessToken();
+    if (token == null) {
       return {'success': false, 'message': 'Not authenticated'};
     }
-
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/admin_api.php'),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $_authToken',
+          'Authorization': 'Bearer $token',
         },
         body: jsonEncode({
           'entity_type': 'drivers',
@@ -184,9 +278,7 @@ class AdminService {
           'number': driver.number,
         }),
       );
-
       final data = jsonDecode(response.body);
-
       if (response.statusCode == 200 && data['success'] == true) {
         return {'success': true, 'message': data['message'], 'id': data['id']};
       } else {
@@ -199,19 +291,19 @@ class AdminService {
       return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
-  
+
   // Delete Driver
   Future<Map<String, dynamic>> deleteDriver(int id) async {
-    if (!isLoggedIn()) {
+    final token = await _getValidAccessToken();
+    if (token == null) {
       return {'success': false, 'message': 'Not authenticated'};
     }
-    
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/admin_api.php'),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $_authToken',
+          'Authorization': 'Bearer $token',
         },
         body: jsonEncode({
           'entity_type': 'drivers',
@@ -219,9 +311,7 @@ class AdminService {
           'id': id,
         }),
       );
-      
       final data = jsonDecode(response.body);
-      
       if (response.statusCode == 200 && data['success'] == true) {
         return {'success': true, 'message': data['message']};
       } else {
@@ -236,19 +326,17 @@ class AdminService {
   }
 
   // CRUD operations for Constructors
-  Future<Map<String, dynamic>> createOrUpdateConstructor(
-    Constructor constructor,
-  ) async {
-    if (!isLoggedIn()) {
+  Future<Map<String, dynamic>> createOrUpdateConstructor(Constructor constructor) async {
+    final token = await _getValidAccessToken();
+    if (token == null) {
       return {'success': false, 'message': 'Not authenticated'};
     }
-
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/admin_api.php'),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $_authToken',
+          'Authorization': 'Bearer $token',
         },
         body: jsonEncode({
           'entity_type': 'constructors',
@@ -257,12 +345,9 @@ class AdminService {
           'name': constructor.name,
           'points': constructor.points,
           'logo_url': constructor.logoUrl,
-          'position': constructor.position,
         }),
       );
-
       final data = jsonDecode(response.body);
-
       if (response.statusCode == 200 && data['success'] == true) {
         return {'success': true, 'message': data['message'], 'id': data['id']};
       } else {
@@ -275,19 +360,19 @@ class AdminService {
       return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
-  
+
   // Delete Constructor
   Future<Map<String, dynamic>> deleteConstructor(int id) async {
-    if (!isLoggedIn()) {
+    final token = await _getValidAccessToken();
+    if (token == null) {
       return {'success': false, 'message': 'Not authenticated'};
     }
-    
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/admin_api.php'),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $_authToken',
+          'Authorization': 'Bearer $token',
         },
         body: jsonEncode({
           'entity_type': 'constructors',
@@ -295,9 +380,7 @@ class AdminService {
           'id': id,
         }),
       );
-      
       final data = jsonDecode(response.body);
-      
       if (response.statusCode == 200 && data['success'] == true) {
         return {'success': true, 'message': data['message']};
       } else {
@@ -313,16 +396,16 @@ class AdminService {
 
   // CRUD operations for Races
   Future<Map<String, dynamic>> createOrUpdateRace(Race race) async {
-    if (!isLoggedIn()) {
+    final token = await _getValidAccessToken();
+    if (token == null) {
       return {'success': false, 'message': 'Not authenticated'};
     }
-
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/admin_api.php'),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $_authToken',
+          'Authorization': 'Bearer $token',
         },
         body: jsonEncode({
           'entity_type': 'races',
@@ -330,15 +413,12 @@ class AdminService {
           if (race.id > 0) 'id': race.id,
           'name': race.name,
           'circuit': race.circuit,
-          'date':
-              race.date.toIso8601String().split('T')[0], // Format as YYYY-MM-DD
+          'date': race.date.toIso8601String().split('T')[0],
           'country': race.country,
           'flag_url': race.flagUrl,
         }),
       );
-
       final data = jsonDecode(response.body);
-
       if (response.statusCode == 200 && data['success'] == true) {
         return {'success': true, 'message': data['message'], 'id': data['id']};
       } else {
@@ -351,19 +431,19 @@ class AdminService {
       return {'success': false, 'message': 'Network error: ${e.toString()}'};
     }
   }
-  
+
   // Delete Race
   Future<Map<String, dynamic>> deleteRace(int id) async {
-    if (!isLoggedIn()) {
+    final token = await _getValidAccessToken();
+    if (token == null) {
       return {'success': false, 'message': 'Not authenticated'};
     }
-    
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/admin_api.php'),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $_authToken',
+          'Authorization': 'Bearer $token',
         },
         body: jsonEncode({
           'entity_type': 'races',
@@ -371,9 +451,7 @@ class AdminService {
           'id': id,
         }),
       );
-      
       final data = jsonDecode(response.body);
-      
       if (response.statusCode == 200 && data['success'] == true) {
         return {'success': true, 'message': data['message']};
       } else {

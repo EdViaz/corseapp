@@ -9,12 +9,13 @@ include_once '../config/config.php';
 try {
     // Create database instance and get connection
     $database = new Database();
-    $conn = $database->getConnection();
-
-    // Query to get constructor standings using prepared statement
-    $sql = "SELECT * FROM constructors ORDER BY position ASC";
+    $conn = $database->getConnection();    // Query to get constructor standings using prepared statement
+    // Prendi l'anno dalla query string, default anno corrente
+    $year = isset($_GET['year']) ? intval($_GET['year']) : intval(date('Y'));
+    // Mostra solo team importati (external_id valorizzato), ordinati per punti discendenti
+    $sql = "SELECT *, ROW_NUMBER() OVER (ORDER BY points DESC) as position FROM constructors WHERE year = :year AND external_id IS NOT NULL AND external_id != '' ORDER BY points DESC";
     $stmt = $conn->prepare($sql);
-    $stmt->execute();
+    $stmt->execute(['year' => $year]);
     
     $constructors = $stmt->fetchAll();
     

@@ -42,8 +42,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
     try {
       final user = await _authService.getCurrentUser();
-      final drivers = await _apiService.getDriverStandings();
-      final constructors = await _apiService.getConstructorStandings();
+      final drivers = await _apiService.getImportedDriverStandings();
+      final constructors = await _apiService.getImportedConstructorStandings();
       final favoriteIds = await _preferencesService.getFavoriteDrivers();
       final favorites =
           drivers.where((driver) => favoriteIds.contains(driver.id)).toList();

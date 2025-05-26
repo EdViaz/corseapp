@@ -70,7 +70,7 @@ class _AdminNewsScreenState extends State<AdminNewsScreen> {
         content: _contentController.text.trim(),
         imageUrl: _imageUrlController.text.trim(),
         publishDate: DateTime.now(),
-        additionalImages: [], 
+        additionalImages: [],
       );
 
       final result = await _adminService.createOrUpdateNews(news);

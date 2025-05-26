@@ -27,6 +27,7 @@ if (!$data || !isset($data['username']) || !isset($data['password'])) {
     exit();
 }
 include_once '../config/config.php';
+include_once 'jwt_helper.php';
 
 try {
     $database = new Database();
@@ -41,17 +42,24 @@ try {
     $stmt->bindParam(':username', $username);
     $stmt->execute();
     $admin = $stmt->fetch(PDO::FETCH_ASSOC);
-
     if ($admin && password_verify($password, $admin['password'])) {
-        // Genera un token sicuro
-        $token = bin2hex(random_bytes(32));
-        // In una vera app, salva il token nel db
+        // Genera i token JWT per admin
+        $access_token = JWTHelper::generateAccessToken($admin['id'], $admin['username'], 'admin');
+        $refresh_token = JWTHelper::generateRefreshToken($admin['id'], $admin['username'], 'admin');
+
         http_response_code(200);
-        // Restituisci il token al client
         echo json_encode([
             'success' => true,
             'message' => 'Login successful',
-           // 'token' => $token
+            'user' => [
+                'id' => $admin['id'],
+                'username' => $admin['username'],
+                'role' => 'admin'
+            ],
+            'access_token' => $access_token,
+            'refresh_token' => $refresh_token,
+            'token_type' => 'Bearer',
+            'expires_in' => 3600 // 1 ora
         ]);
     } else {
         http_response_code(401);

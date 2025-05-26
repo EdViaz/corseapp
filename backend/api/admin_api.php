@@ -17,6 +17,18 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' && $_SERVER['REQUEST_METHOD'] !== 'DEL
     exit();
 }
 
+// Include dependencies
+include_once '../config/config.php';
+include_once 'jwt_helper.php';
+
+// Verifica autenticazione admin
+try {
+    $user_data = JWTHelper::requireAuth('admin');
+} catch (Exception $e) {
+    // L'errore viene già gestito da requireAuth()
+    exit();
+}
+
 // Get JSON data
 $data = json_decode(file_get_contents('php://input'), true);
 
@@ -27,30 +39,6 @@ if (!$data || !isset($data['entity_type']) || !isset($data['action'])) {
     exit();
 }
 
-// Check for authorization token
-$headers = getallheaders();
-$auth_header = isset($headers['Authorization']) ? $headers['Authorization'] : '';
-
-if (empty($auth_header) || !preg_match('/Bearer\s+(\S+)/', $auth_header, $matches)) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'error' => 'Unauthorized']);
-    exit();
-}
-
-$token = $matches[1];
-
-// In a real application, you would validate the token against a database
-// For this example, we'll just check if it's not empty
-if (empty($token)) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'error' => 'Invalid token']);
-    exit();
-}
-
-// Include database connection
-include_once '../config/config.php';
-
-// Get entity type and action
 $entity_type = $data['entity_type']; // news, drivers, constructors, races
 $action = $data['action']; // create, update, delete
 
@@ -73,6 +61,32 @@ try {
         case 'races':
             handleRaces($conn, $action, $data);
             break;
+        // AGGIUNTA: endpoint per aggiornamento automatico dati F1
+        case 'sync':
+            if ($action === 'update') {
+                try {
+                    // Includi direttamente lo script invece di usare exec
+                    ob_start();
+                    include_once __DIR__ . '/sync_f1_data.php';
+                    $output = ob_get_clean();
+
+                    // Prova a decodificare la risposta JSON
+                    $response = @json_decode($output, true);
+
+                    if ($response && isset($response['success']) && $response['success']) {
+                        echo json_encode(['success' => true, 'message' => 'Dati F1 aggiornati con successo']);
+                    } else {
+                        $errorMsg = $response['error'] ?? 'Errore durante la sincronizzazione dati F1';
+                        echo json_encode(['success' => false, 'error' => $errorMsg]);
+                    }
+                } catch (Exception $e) {
+                    echo json_encode(['success' => false, 'error' => 'Errore interno: ' . $e->getMessage()]);
+                }
+                exit();
+            }
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Invalid action for sync']);
+            exit();
         default:
             http_response_code(400);
             echo json_encode(['success' => false, 'error' => 'Invalid entity type']);
@@ -296,7 +310,7 @@ function handleConstructors($conn, $action, $data)
     switch ($action) {
         case 'create':
         case 'update':
-            if (!isset($data['name']) || !isset($data['points']) || !isset($data['position'])) {
+            if (!isset($data['name']) || !isset($data['points'])) {
                 http_response_code(400);
                 echo json_encode(['success' => false, 'error' => 'Missing required fields for constructor']);
                 exit();
@@ -305,25 +319,23 @@ function handleConstructors($conn, $action, $data)
             // Sanitize inputs
             $name = htmlspecialchars(trim($data['name']));
             $points = (float)$data['points'];
-            $position = (int)$data['position'];
             $logo_url = isset($data['logo_url']) ? htmlspecialchars(trim($data['logo_url'])) : '';
 
             // Check if we're updating an existing record or creating a new one
             if (isset($data['id']) && $data['id'] > 0) {
                 // Update existing constructor
-                $sql = "UPDATE constructors SET name = :name, points = :points, position = :position, logo_url = :logo_url WHERE id = :id";
+                $sql = "UPDATE constructors SET name = :name, points = :points, logo_url = :logo_url WHERE id = :id";
                 $stmt = $conn->prepare($sql);
                 $stmt->bindParam(':id', $data['id'], PDO::PARAM_INT);
             } else {
                 // Insert new constructor
-                $sql = "INSERT INTO constructors (name, points, position, logo_url) VALUES (:name, :points, :position, :logo_url)";
+                $sql = "INSERT INTO constructors (name, points, logo_url) VALUES (:name, :points, :logo_url)";
                 $stmt = $conn->prepare($sql);
             }
 
             // Bind parameters
             $stmt->bindParam(':name', $name);
             $stmt->bindParam(':points', $points);
-            $stmt->bindParam(':position', $position);
             $stmt->bindParam(':logo_url', $logo_url);
 
             // Execute the query

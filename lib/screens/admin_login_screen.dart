@@ -42,13 +42,11 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
         if (mounted) {
           // Check if authentication was successful
           final isLoggedIn = await _adminService.ensureLoggedIn();
-          
+
           if (isLoggedIn && mounted) {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(
-                builder: (context) => const AdminNewsScreen(),
-              ),
+              MaterialPageRoute(builder: (context) => const AdminNewsScreen()),
             );
           } else if (mounted) {
             setState(() {
@@ -91,10 +89,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 20),
-              Image.asset(
-                'images/f1logo.png',
-                height: 100,
-              ),
+              Image.asset('images/f1logo.png', height: 100),
               const SizedBox(height: 40),
               TextFormField(
                 controller: _usernameController,
@@ -143,9 +138,10 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
-                child: _isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('LOGIN'),
+                child:
+                    _isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text('LOGIN'),
               ),
             ],
           ),

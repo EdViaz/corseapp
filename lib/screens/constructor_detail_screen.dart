@@ -1,9 +1,26 @@
 import 'package:flutter/material.dart';
 import '../models/f1_models.dart';
+import '../services/api_service.dart';
+import 'driver_detail_screen.dart';
 
-class ConstructorDetailScreen extends StatelessWidget {
+class ConstructorDetailScreen extends StatefulWidget {
   final Constructor constructor;
   const ConstructorDetailScreen({super.key, required this.constructor});
+
+  @override
+  State<ConstructorDetailScreen> createState() =>
+      _ConstructorDetailScreenState();
+}
+
+class _ConstructorDetailScreenState extends State<ConstructorDetailScreen> {
+  final ApiService _apiService = ApiService();
+  late Future<List<Driver>> _teamDriversFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _teamDriversFuture = _apiService.getDriversByTeamId(widget.constructor.id);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,12 +49,12 @@ class ConstructorDetailScreen extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
             child: Row(
               children: [
-                if (constructor.logoUrl.isNotEmpty)
+                if (widget.constructor.logoUrl.isNotEmpty)
                   Hero(
-                    tag: 'team-image-${constructor.id}',
+                    tag: 'team-image-${widget.constructor.id}',
                     child: CircleAvatar(
                       radius: 38,
-                      backgroundImage: NetworkImage(constructor.logoUrl),
+                      backgroundImage: NetworkImage(widget.constructor.logoUrl),
                       backgroundColor: Colors.white,
                       onBackgroundImageError: (_, __) {},
                     ),
@@ -48,18 +65,25 @@ class ConstructorDetailScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        constructor.name,
+                        widget.constructor.name,
                         style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                         ),
                       ),
-                      Text(
-                        'Posizione: ${constructor.position} | Punti: ${constructor.points}',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.white70,
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 350),
+                        transitionBuilder:
+                            (child, animation) =>
+                                ScaleTransition(scale: animation, child: child),
+                        child: Text(
+                          'Punti: ${widget.constructor.points}',
+                          key: ValueKey(widget.constructor.points),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.white70,
+                          ),
                         ),
                       ),
                     ],
@@ -89,37 +113,149 @@ class ConstructorDetailScreen extends StatelessWidget {
                             ),
                           ),
                           const Divider(),
-                          _infoRow('Nome', constructor.name),
-                          _infoRow('Posizione', constructor.position.toString()),
-                          _infoRow('Punti', constructor.points.toString()),
+                          _infoRow('Nome', widget.constructor.name),
+                          _infoRow(
+                            'Punti',
+                            widget.constructor.points.toString(),
+                          ),
                         ],
                       ),
                     ),
                   ),
                   const SizedBox(height: 16),
-                  // Placeholder per statistiche o dettagli aggiuntivi
-                  Card(
-                    elevation: 4,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text(
-                            'Statistiche Team',
-                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  // Piloti della scuderia
+                  const Text(
+                    'Piloti della Scuderia',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  FutureBuilder<List<Driver>>(
+                    future: _teamDriversFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      } else if (snapshot.hasError) {
+                        return Center(
+                          child: Text(
+                            'Errore nel caricamento piloti: ${snapshot.error}',
                           ),
-                          Divider(),
-                          Text('Statistiche dettagliate non disponibili.'),
-                        ],
-                      ),
-                    ),
+                        );
+                      } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                        return const Center(
+                          child: Text(
+                            'Nessun pilota disponibile per questa scuderia',
+                          ),
+                        );
+                      } else {
+                        final drivers = snapshot.data!;
+                        return Column(
+                          children:
+                              drivers
+                                  .map((driver) => _buildDriverCard(driver))
+                                  .toList(),
+                        );
+                      }
+                    },
                   ),
                 ],
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDriverCard(Driver driver) {
+    return Card(
+      elevation: 4,
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => DriverDetailScreen(driverId: driver.id),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            children: [
+              Hero(
+                tag: 'driver-image-${driver.id}',
+                child: CircleAvatar(
+                  radius: 30,
+                  backgroundImage: NetworkImage(driver.imageUrl),
+                  backgroundColor: Colors.grey[300],
+                  onBackgroundImageError: (_, __) {},
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${driver.name} ${driver.surname}',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Numero: ${driver.number}',
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Nazionalità: ${driver.nationality}',
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade700,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      'P${driver.position}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '${driver.points} pts',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 8),
+              const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+            ],
+          ),
+        ),
       ),
     );
   }

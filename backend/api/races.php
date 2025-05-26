@@ -11,10 +11,11 @@ try {
     $database = new Database();
     $conn = $database->getConnection();
 
-    // Query to get races using prepared statement
-    $sql = "SELECT * FROM races ORDER BY date ASC";
+    // Prendi l'anno dalla query string, default anno corrente
+    $year = isset($_GET['year']) ? intval($_GET['year']) : intval(date('Y'));
+    $sql = "SELECT * FROM races WHERE year = :year ORDER BY date ASC";
     $stmt = $conn->prepare($sql);
-    $stmt->execute();
+    $stmt->execute(['year' => $year]);
     
     $races = [];
     $currentTime = time();

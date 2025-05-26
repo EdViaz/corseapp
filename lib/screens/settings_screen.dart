@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:corseapp/services/config.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'admin_screen.dart';
@@ -99,7 +100,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                         // Effettua la richiesta al backend
                         final response = await http.post(
-                          Uri.parse('http://localhost:80/api/admin_login.php'),
+                          Uri.parse('$url/admin_login.php'),
                           body: jsonEncode({
                             'username': username,
                             'password': password,

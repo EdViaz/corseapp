@@ -25,14 +25,26 @@ class _StandingsScreenState extends State<StandingsScreen>
   late Future<List<Driver>> _driversFuture;
   late Future<List<Constructor>> _constructorsFuture;
 
+  int _selectedYear = DateTime.now().year;
+  List<int> _availableYears = List.generate(10, (i) => DateTime.now().year - i);
+
+  void _onYearChanged(int? year) {
+    if (year == null) return;
+    setState(() {
+      _selectedYear = year;
+      _driversFuture = _apiService.getDriverStandingsByYear(_selectedYear);
+      _constructorsFuture = _apiService.getConstructorStandingsByYear(_selectedYear);
+    });
+  }
+
   @override
   void initState() {
     super.initState();
     // Inizializza il controller con 2 tab (Piloti e Costruttori)
     _tabController = TabController(length: 2, vsync: this);
     // Carica i dati delle classifiche all'avvio della schermata
-    _driversFuture = _apiService.getDriverStandings();
-    _constructorsFuture = _apiService.getConstructorStandings();
+    _driversFuture = _apiService.getDriverStandingsByYear(_selectedYear);
+    _constructorsFuture = _apiService.getConstructorStandingsByYear(_selectedYear);
   }
 
   @override
@@ -43,8 +55,8 @@ class _StandingsScreenState extends State<StandingsScreen>
 
   Future<void> _refreshStandings() async {
     setState(() {
-      _driversFuture = _apiService.getDriverStandings();
-      _constructorsFuture = _apiService.getConstructorStandings();
+      _driversFuture = _apiService.getDriverStandingsByYear(_selectedYear);
+      _constructorsFuture = _apiService.getConstructorStandingsByYear(_selectedYear);
     });
     await Future.wait([_driversFuture, _constructorsFuture]);
   }
@@ -55,6 +67,24 @@ class _StandingsScreenState extends State<StandingsScreen>
       // AppBar con titolo e TabBar per navigare tra le classifiche
       appBar: AppBar(
         backgroundColor: Colors.red.shade700,
+        title: Row(
+          children: [
+            const Text('Classifica'),
+            const Spacer(),
+            DropdownButton<int>(
+              value: _selectedYear,
+              dropdownColor: Colors.white,
+              icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
+              underline: const SizedBox(),
+              style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+              items: _availableYears.map((year) => DropdownMenuItem(
+                value: year,
+                child: Text(year.toString()),
+              )).toList(),
+              onChanged: _onYearChanged,
+            ),
+          ],
+        ),
         bottom: TabBar(
           controller: _tabController,
           tabs: const [Tab(text: 'Piloti'), Tab(text: 'Team')],
@@ -110,11 +140,24 @@ class _StandingsScreenState extends State<StandingsScreen>
                           title: Text(
                             '${driver.name} ${driver.surname}',
                             style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          subtitle: Text('Punti: ${driver.points}'),
-                          trailing: const Icon(
-                            Icons.arrow_forward_ios,
-                            size: 18,
+                          ),                          subtitle: Text('Punti: ${driver.points}'),
+                          trailing: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: Colors.red.shade700,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: Text(
+                                '${driver.position}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
                           ),
                           onTap: () {
                             Navigator.push(
@@ -179,11 +222,24 @@ class _StandingsScreenState extends State<StandingsScreen>
                           title: Text(
                             constructor.name,
                             style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          subtitle: Text('Punti: ${constructor.points}'),
-                          trailing: const Icon(
-                            Icons.arrow_forward_ios,
-                            size: 18,
+                          ),                          subtitle: Text('Punti: ${constructor.points}'),
+                          trailing: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: Colors.red.shade700,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: Text(
+                                '${constructor.position}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
                           ),
                           onTap: () {
                             Navigator.push(
