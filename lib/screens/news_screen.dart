@@ -49,6 +49,7 @@ class _NewsScreenState extends State<NewsScreen> {
       appBar: AppBar(
         title: const Text('Notizie'),
         backgroundColor: Colors.red.shade700,
+        automaticallyImplyLeading: false,
         actions: [
           IconButton(
             icon: Icon(

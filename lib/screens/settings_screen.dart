@@ -1,6 +1,8 @@
 import 'dart:convert';
 
+import 'package:corseapp/services/auth_service.dart';
 import 'package:corseapp/services/config.dart';
+import 'package:corseapp/services/preferences_service.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'admin_screen.dart';
@@ -36,6 +38,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 32),
           _buildSectionTitle('Info app'),
           _buildAppInfo(),
+          const SizedBox(height: 32),
+          _buildLogoutButton(),
         ],
       ),
     );
@@ -162,6 +166,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const Text('Email: edoardo.viale@itiszuccante.edu.it'),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildLogoutButton() {
+    return Align(
+      alignment: Alignment.center,
+      child: ElevatedButton.icon(
+        icon: const Icon(Icons.logout, size: 20),
+        label: const Text('Logout'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.red.shade700,
+          foregroundColor: Colors.white,
+          minimumSize: const Size(120, 40),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+        onPressed: () async {
+          try {
+            await AuthService().logout();
+            await PreferencesService().resetAllPreferences();
+          } catch (_) {}
+          if (mounted) {
+            Navigator.of(context).pushNamedAndRemoveUntil('/welcome', (route) => false);
+          }
+        },
       ),
     );
   }
