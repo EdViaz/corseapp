@@ -44,7 +44,7 @@ class _AdminScreenState extends State<AdminScreen>
       _driversFuture = _apiService.getImportedDriverStandings();
       _constructorsFuture = _apiService.getImportedConstructorStandings();
       _newsFuture = _apiService.getNews();
-      _racesFuture = _apiService.getRaces();
+      _racesFuture = _apiService.getRacesByYear(DateTime.now().year);
     });
   }
 

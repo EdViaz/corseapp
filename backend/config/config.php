@@ -13,7 +13,7 @@ class Database
 
     public function __construct()
     {
-        $this->host = '127.0.0.1';
+        $this->host = '16.16.211.121';
         $this->database = getenv('MYSQL_DATABASE') ?: 'f1_db';
         $this->username = getenv('MYSQL_USER') ?: 'corseuser';
         $this->password = getenv('MYSQL_PASSWORD') ?: 'edviaz';

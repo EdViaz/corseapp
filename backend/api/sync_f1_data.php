@@ -83,13 +83,34 @@ try {
 
     // 2b. Aggiorna punti team da Jolpica Constructor Standings
     $constructorStandingsData = fetch_jolpica_api('/current/constructorStandings.json');
-    $constructorStandings = $constructorStandingsData['MRData']['StandingsTable']['StandingsLists'][0]['ConstructorStandings'] ?? [];    $teamPointsUpdated = 0;
+    $constructorStandings = $constructorStandingsData['MRData']['StandingsTable']['StandingsLists'][0]['ConstructorStandings'] ?? [];
+    $teamPointsUpdated = 0;
     foreach ($constructorStandings as $standing) {
         $constructorId = $standing['Constructor']['constructorId'];
         $points = $standing['points'];
         $stmt = $conn->prepare('UPDATE constructors SET points = ? WHERE external_id = ? AND year = 2025');
         $stmt->execute([$points, $constructorId]);
         $teamPointsUpdated++;
+    }
+
+    // 3. Aggiorna gare da Jolpica
+    $racesData = fetch_jolpica_api('/current.json');
+    $races = $racesData['MRData']['RaceTable']['Races'] ?? [];
+    $racesUpdated = 0;
+    foreach ($races as $race) {
+        $name = $race['raceName'];
+        $circuit = $race['Circuit']['circuitName'];
+        $date = $race['date'];
+        $country = $race['Circuit']['Location']['country'];
+        $flag_url = '';
+        $isPast = (strtotime($date) < time()) ? 1 : 0;
+        $year = intval($race['season']);
+
+        $stmt = $conn->prepare('INSERT INTO races (name, circuit, date, country, flag_url, isPast, year)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE name=VALUES(name), circuit=VALUES(circuit), date=VALUES(date), country=VALUES(country), flag_url=VALUES(flag_url), isPast=VALUES(isPast)');
+        $stmt->execute([$name, $circuit, $date, $country, $flag_url, $isPast, $year]);
+        $racesUpdated++;
     }
 
     // Restituisci solo JSON
@@ -100,7 +121,8 @@ try {
             "drivers_updated" => $driversUpdated,
             "driver_points_updated" => $pointsUpdated,
             "teams_updated" => $teamsUpdated,
-            "team_points_updated" => $teamPointsUpdated
+            "team_points_updated" => $teamPointsUpdated,
+            "races_updated" => $racesUpdated
         ]
     ]);
 } catch (Exception $e) {
